@@ -51,7 +51,7 @@ char startx=6;
 char starty=16;
 char positionx=6;
 char positiony=16;
-unsigned int style=0x1;
+unsigned char style=0x1;
 
 char exitx=13;
 char exity=1;
@@ -304,92 +304,7 @@ void hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
             pix_pos[(unsigned char)x1&7]);
     }
 }
-/* Plot a line using the Bresenham algorithm
-   from Nelson Johnson, "Advanced Graphics in C"
-   ed. Osborne, McGraw-Hill.
-   Horizontal and vertical lines need to be considerably
-   speeded up by using a direct access to video RAM.
-*/
-void line_br(unsigned short x1, unsigned short y1,
-        unsigned short x2, unsigned short y2)
-{
-    static short dx;
-    static short dy;
-    static short incx;
-    static short incy;
-    static unsigned short ix;
-    static unsigned short iy;
-    static unsigned short inc;
 
-    static unsigned short plotx;
-    static unsigned short ploty;
-    static unsigned char changey;
-    static short x, y;
-    static unsigned short style_mask;
-    static unsigned char plot;
-
-    static unsigned char d;
-    static unsigned int e;
-    static unsigned int by;
-    static unsigned int ypos;
-    static unsigned short i;
-
-    dx=x2-x1;
-    dy=y2-y1;
-    incx=a_sign(dx);
-    incy=a_sign(dy);
-    ix=a_abs(dx);
-    iy=a_abs(dy);
-    inc=a_max(ix, iy);
-    plotx=x1;
-    ploty=y1;
-    changey=TRUE;
-    x=0;
-    y=0;
-    style_mask=style;
-    plot=FALSE;
-    d=y&0xFFF8;
-    e=d*40;
-    by=BASE+e+(x&0xFFF8)+((unsigned char)y&7);
-
-
-    /* Plot the first pixel */
-    POKE(by, PEEK(by) | pix_pos[(unsigned char)x&7]);
-
-    /* Slower version with line styles */
-    for(i=0; i<=inc; ++i) {
-        x += ix;
-        y += iy;
-        if (x>inc) {
-            plot=TRUE;
-            x-=inc;
-            plotx +=incx;
-        }
-        if (y>inc) {
-            plot=TRUE;
-            y-=inc;
-            ploty +=incy;
-            changey=TRUE;
-        }
-        if (plot && style_mask & 0x001) {
-            plot=FALSE;
-            if(changey==TRUE) {
-                /* Calculations for the position of the memory location to
-                   modify are more complicated in y than in x, so it is
-                   worth doing them only when necessary. That greatly
-                   improves speed for horisontal lines. */
-                changey=FALSE;
-                d=ploty&0xFFF8;
-                e=d*40;
-                ypos=BASE+e+((unsigned char)ploty&0x07);
-            }
-            by=ypos+(plotx&0xFFF8);
-            POKE(by, PEEK(by) | pix_pos[(unsigned char)plotx&0x07]);
-        }
-        style_mask >>= 1;
-        if(style_mask==0) style_mask=style;
-    }
-}
 /* Plot a line using the Bresenham algorithm
    from Nelson Johnson, "Advanced Graphics in C"
    ed. Osborne, McGraw-Hill.
@@ -415,11 +330,7 @@ void line(unsigned short x1, unsigned short y1,
     static unsigned int by;
     static unsigned int ypos;
     static unsigned int i;
-
-    if(style!=0x1) {
-        line_br(x1,y1,x2,y2);
-        return;
-    }
+    static unsigned char style_mask;
 
     incx=x2>x1?1:-1;
     incy=y2>y1?1:-1;
@@ -427,26 +338,31 @@ void line(unsigned short x1, unsigned short y1,
     ix=((x2-x1)*incx);
     iy=((y2-y1)*incy);
 
-    if(ix==0) {
-        if(y1<y2)
-            vert_line(x1, y1,y2);
-        else
-            vert_line(x1, y2,y1);
-        return;
-    }
-    if(iy==0) {
-        if(x1<x2)
-            hor_line(x1,x2,y1);
-        else
-            hor_line(x2,x1,y1);
-        return;
-    }
-    if(ix==iy) {
-        diag_line(x1,y1,ix,incx,incy);
-        return;
+    // If continuous lines have to be drawn, check if we can employ simplified
+    // and faster code in certain particular cases.
+    if(style==0x1) {
+        if(ix==0) {
+            if(y1<y2)
+                vert_line(x1, y1,y2);
+            else
+                vert_line(x1, y2,y1);
+            return;
+        }
+        if(iy==0) {
+            if(x1<x2)
+                hor_line(x1,x2,y1);
+            else
+                hor_line(x2,x1,y1);
+            return;
+        }
+        if(ix==iy) {
+            diag_line(x1,y1,ix,incx,incy);
+            return;
+        }
     }
 
     inc=a_max(ix, iy);
+    style_mask=style;
 
     changey=TRUE;
     x=0;
@@ -476,13 +392,13 @@ void line(unsigned short x1, unsigned short y1,
             y1 +=incy;
             changey=TRUE;
         }
-        if (plot) {
+        if (plot && (style_mask&0x0001u)) {
             plot=FALSE;
             if(changey==TRUE) {
                 /* Calculations for the position of the memory location to
                    modify are more complicated in y than in x, so it is
                    worth doing them only when necessary. That greatly
-                   improves speed for horisontal lines. */
+                   improves speed for almost horisontal lines. */
                 changey=FALSE;
                 d=y1&0xFFF8;
                 e=d*40;
@@ -491,6 +407,8 @@ void line(unsigned short x1, unsigned short y1,
             by=ypos+(x1&0xFFF8);
             POKE(by, PEEK(by) | pix_pos[(unsigned char)x1&0x07]);
         }
+        style_mask >>= 1;
+        if(style_mask==0) style_mask=style;
     }
 }
 
@@ -511,16 +429,18 @@ void box(unsigned short x1, unsigned short y1, unsigned short x2,
     yul=(y2>y1) ? y1 : y2;
     xlr=(x2>x1) ? x2 : x1;
     ylr=(y2>y1) ? y2 : y1;
+    // The simplified code does not handle styled lines, so one must check
+    // for it.
     if(style==0x1) {
         hor_line(xul, xlr, yul);
         hor_line(xul, xlr, ylr);
         vert_line(xul, yul, ylr);
         vert_line(xlr, yul, ylr);
     } else {
-        line_br(xul, yul, xlr, yul);
-        line_br(xlr, yul, xlr, ylr);
-        line_br(xlr, ylr, xul, ylr);
-        line_br(xul, ylr, xul, yul);
+        line(xul, yul, xlr, yul);
+        line(xlr, yul, xlr, ylr);
+        line(xlr, ylr, xul, ylr);
+        line(xul, ylr, xul, yul);
     }
 }
 
