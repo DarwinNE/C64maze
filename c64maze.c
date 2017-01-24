@@ -95,7 +95,7 @@ void clearHGRpage(void)
        address of the HGR page */
     asm("       ldy #0");
     asm("       tya");
-    asm("loop:  sta $6000,y"); 
+    asm("loop:  sta $6000,y");
     asm("       sta $6100,y");
     asm("       sta $6200,y");
     asm("       sta $6300,y");
@@ -129,13 +129,13 @@ void clearHGRpage(void)
     asm("       sta $7F00,y");
     asm("       iny");
     asm("       bne loop");
-    
+
     // Setup color memory
     /*for(i=COLOR_MEM;i<COLOR_MEM+1000;++i)
         POKE(i,3);*/
     asm("       ldy #0");
     asm("       lda #3");
-    asm("loop1: sta $4400,y"); 
+    asm("loop1: sta $4400,y");
     asm("       sta $4500,y");
     asm("       sta $4600,y");
     asm("       sta $4700,y");
@@ -152,7 +152,7 @@ void printat(unsigned short x, unsigned short y, char *s)
     unsigned char mm=f.magnification;
     unsigned char incrementx=f.incX*mm;
     unsigned char incrementy=f.incX*mm;
-    
+
 
     for (i=0; s[i]!='\0';++i) {
         for (j=0;j<incrementy;++j) {
@@ -179,7 +179,7 @@ void clearMazeRegion(void)
     unsigned char y;
     unsigned int by=BASE;
     // Clear the leftmost part of the screen
-    
+
     for(y=0;y<25;++y) {
         for(x=0;x<200;++x)
             POKE(by++,0);
@@ -188,7 +188,7 @@ void clearMazeRegion(void)
     // Very fast version of the routine.
     asm("       ldy #0");
     asm("       tya");
-    asm("loop2:  sta $6000,y"); 
+    asm("loop2:  sta $6000,y");
     asm("       sta $6000+320,y");
     asm("       sta $6000+2*320,y");
     asm("       sta $6000+3*320,y");
@@ -217,7 +217,7 @@ void clearMazeRegion(void)
     asm("       iny");
     asm("       cpy #200");
     asm("       bne loop2");
-    
+
 }
 
 /** Switch on the HGR monochrome graphic mode.
@@ -300,7 +300,7 @@ void hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
             x1+=7; // because the for statement will add 1.
             continue;
         }
-        POKE(by+(x1&0xFFF8), PEEK(by+(x1&0xFFF8)) | 
+        POKE(by+(x1&0xFFF8), PEEK(by+(x1&0xFFF8)) |
             pix_pos[(unsigned char)x1&7]);
     }
 }
@@ -333,7 +333,7 @@ void line_br(unsigned short x1, unsigned short y1,
     static unsigned int by;
     static unsigned int ypos;
     static unsigned short i;
-    
+
     dx=x2-x1;
     dy=y2-y1;
     incx=a_sign(dx);
@@ -351,7 +351,7 @@ void line_br(unsigned short x1, unsigned short y1,
     d=y&0xFFF8;
     e=d*40;
     by=BASE+e+(x&0xFFF8)+((unsigned char)y&7);
-    
+
 
     /* Plot the first pixel */
     POKE(by, PEEK(by) | pix_pos[(unsigned char)x&7]);
@@ -401,7 +401,7 @@ void line(unsigned short x1, unsigned short y1,
 {
     static short incx;
     static short incy;
-    
+
     static unsigned short ix;
     static unsigned short iy;
     static unsigned short inc;
@@ -423,7 +423,7 @@ void line(unsigned short x1, unsigned short y1,
 
     incx=x2>x1?1:-1;
     incy=y2>y1?1:-1;
-    
+
     ix=((x2-x1)*incx);
     iy=((y2-y1)*incy);
 
@@ -480,8 +480,8 @@ void line(unsigned short x1, unsigned short y1,
             plot=FALSE;
             if(changey==TRUE) {
                 /* Calculations for the position of the memory location to
-                   modify are more complicated in y than in x, so it is 
-                   worth doing them only when necessary. That greatly 
+                   modify are more complicated in y than in x, so it is
+                   worth doing them only when necessary. That greatly
                    improves speed for horisontal lines. */
                 changey=FALSE;
                 d=y1&0xFFF8;
@@ -592,7 +592,7 @@ void drawLabyrinthView()
     unsigned char step=0;
     unsigned char wall=FALSE;
     unsigned char wayout=FALSE;
-    
+
     style=0x1;
     set_orientation();
     for(step=0;(wall==FALSE)&&(step<6);++step) {
@@ -669,7 +669,7 @@ void drawLabyrinthView()
             wall=TRUE;
         }
     }
-    if(wall==TRUE) 
+    if(wall==TRUE)
         box(step*STEPSIZEX,step*STEPSIZEY,
             SIZEX-step*STEPSIZEX,SIZEY-step*STEPSIZEY);
     if(wayout) {
@@ -681,7 +681,7 @@ void drawLabyrinthView()
         line(SIZEX-step*STEPSIZEX,step*STEPSIZEY,
             step*STEPSIZEX,SIZEY-step*STEPSIZEY);
     }
-        
+
 }
 void validate_data()
 {
@@ -737,7 +737,7 @@ void colour_banner(void)
 {
     unsigned char x;
     unsigned char y;
-    
+
     for(x=25;x<40;++x) {
         for(y=0;y<25;++y) {
             POKE(COLOR_MEM+x+y*40,0x67);
