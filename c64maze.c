@@ -1,6 +1,7 @@
 #include<conio.h>
 #include"vic_font.h"
 
+
 typedef unsigned char byte;
 
 #define POKE(addr,val)     (*(unsigned char*) (addr) = (val))
@@ -10,6 +11,7 @@ typedef unsigned char byte;
 #define VIC_II_Y_SCROLL 53265U
 #define     BMM 32  // Monochromatic high resolution mode
 #define VIC_II_SCREEN_CHAR 53272U
+#define SCREEN_BORDER 53280U
 
 #define BASE 0x6000U
 #define COLOR_MEM 0x4400U
@@ -64,7 +66,7 @@ char orientation=0;
 
 struct font{
     unsigned char *pDesc;   /* Pointer to the character raster array */
-    unsigned int  pos[256]; /* Position of the symbol */
+    unsigned int pos[256]; /* Position of the symbol */
     unsigned char incX;     /* Increment in X (-1 means a proportional font) */
     unsigned char incY;     /* Increment in Y */
     unsigned char magnification;  /* Magnification */
@@ -142,25 +144,37 @@ void clearHGRpage(void)
     asm("       iny");
     asm("       bne loop1");
 }
+
 /* printat prints a text at the given location unsing the font described
    by the structure font */
 void printat(unsigned short x, unsigned short y, char *s)
 {
-    unsigned short i,j,k;
+    unsigned char i,j,k;
     unsigned char a;
     unsigned char t;
+    unsigned int p;
     unsigned char mm=f.magnification;
     unsigned char incrementx=f.incX*mm;
-    unsigned char incrementy=f.incX*mm;
-
+    unsigned char incrementy=f.incY*mm;
+    unsigned int ppos;
+    unsigned char q,r;
 
     for (i=0; s[i]!='\0';++i) {
+        p=0;
+        r=0;
+        ppos=f.pos[s[i]];
         for (j=0;j<incrementy;++j) {
-            a=f.pDesc[f.pos[s[i]]+j/mm];
+            a=f.pDesc[ppos+p];
+            ++r;
+            if(r==mm){
+                ++p;
+                r=0;
+            }
             t=1;
+            q=y+j;
             for(k=0;a!=0;++k){
                 if (a & 0x0001)
-                    pset(x+incrementx-k, y+j);
+                    pset(x+incrementx-k, q);
                 if(t==mm){
                     a>>=1;
                     t=1;
@@ -335,21 +349,21 @@ void line(unsigned short x1, unsigned short y1,
     incx=x2>x1?1:-1;
     incy=y2>y1?1:-1;
 
-    ix=((x2-x1)*incx);
-    iy=((y2-y1)*incy);
+    ix=incx>0?x2-x1:x1-x2;
+    iy=incy>0?y2-y1:y1-y2;
 
     // If continuous lines have to be drawn, check if we can employ simplified
     // and faster code in certain particular cases.
     if(style==0x1) {
         if(ix==0) {
-            if(y1<y2)
+            if(incy>0)
                 vert_line(x1, y1,y2);
             else
                 vert_line(x1, y2,y1);
             return;
         }
         if(iy==0) {
-            if(x1<x2)
+            if(incx>0)
                 hor_line(x1,x2,y1);
             else
                 hor_line(x2,x1,y1);
@@ -372,7 +386,6 @@ void line(unsigned short x1, unsigned short y1,
     d=y1&0xFFF8;
     e=d*40;
     by=BASE+e+(x1&0xFFF8)+((unsigned char)y1&7);
-
 
     /* Plot the first pixel */
     POKE(by, PEEK(by) | pix_pos[(unsigned char)x1&7]);
@@ -510,6 +523,10 @@ void drawLabyrinthView()
     unsigned char posx=positionx;
     unsigned char posy=positiony;
     unsigned char step=0;
+    unsigned int sszx;
+    unsigned int sszy;
+    unsigned int sszxp1;
+    unsigned int sszyp1;
     unsigned char wall=FALSE;
     unsigned char wayout=FALSE;
 
@@ -533,49 +550,53 @@ void drawLabyrinthView()
         if(labyrinth[posx+posy*labyrinthSizeX]=='*') {
             break;
         }
+        sszx=step*STEPSIZEX;
+        sszy=step*STEPSIZEY;
+        sszxp1=(step+1)*STEPSIZEX;
+        sszyp1=(step+1)*STEPSIZEY;
         // Wall on the right?
         if(labyrinth[posx+rightx+(posy+righty)*labyrinthSizeX]=='*') {
-            line(SIZEX-step*STEPSIZEX,step*STEPSIZEY,
-                 SIZEX-(step+1)*STEPSIZEX,(step+1)*STEPSIZEY);
-            line(SIZEX-step*STEPSIZEX,SIZEY-step*STEPSIZEY,
-                 SIZEX-(step+1)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY);
+            line(SIZEX-sszx,sszy,
+                 SIZEX-sszxp1,sszyp1);
+            line(SIZEX-sszx,SIZEY-sszy,
+                 SIZEX-sszxp1,SIZEY-sszyp1);
         } else {
             // Closer vertical line
-            line(SIZEX-step*STEPSIZEX,step*STEPSIZEY,
-                 SIZEX-step*STEPSIZEX,SIZEY-step*STEPSIZEY);
+            line(SIZEX-sszx,sszy,
+                 SIZEX-sszx,SIZEY-sszy);
             // Farther vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
-                line(SIZEX-(step+1)*STEPSIZEX,(step+1)*STEPSIZEY,
-                    SIZEX-(step+1)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY);
+                line(SIZEX-sszxp1,sszyp1,
+                    SIZEX-sszxp1,SIZEY-sszyp1);
             }
             // Upper horisontal line
-            line(SIZEX-(step+1)*STEPSIZEX,(step+1)*STEPSIZEY,
-                 SIZEX-(step)*STEPSIZEX,(step+1)*STEPSIZEY);
+            line(SIZEX-sszxp1,sszyp1,
+                 SIZEX-sszx,sszyp1);
             // Lower horisontal line
-            line(SIZEX-(step+1)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY,
-                 SIZEX-(step)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY);
+            line(SIZEX-sszxp1,SIZEY-sszyp1,
+                 SIZEX-sszx,SIZEY-sszyp1);
         }
         // Wall on the left?
         if(labyrinth[posx+leftx+(posy+lefty)*labyrinthSizeX]=='*') {
-            line(step*STEPSIZEX,step*STEPSIZEY,
-                 (step+1)*STEPSIZEX,(step+1)*STEPSIZEY);
-            line(step*STEPSIZEX,SIZEY-step*STEPSIZEY,
-                 (step+1)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY);
+            line(sszx,sszy,
+                 sszxp1,sszyp1);
+            line(sszx,SIZEY-sszy,
+                 sszxp1,SIZEY-sszyp1);
         } else {
             // Closer vertical line
-            line(step*STEPSIZEX,step*STEPSIZEY,
-                 step*STEPSIZEX,SIZEY-step*STEPSIZEY);
+            line(sszx,sszy,
+                 sszx,SIZEY-sszy);
             // Farter vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
-                line((step+1)*STEPSIZEX,(step+1)*STEPSIZEY,
-                 (step+1)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY);
+                line(sszxp1,sszyp1,
+                 sszxp1,SIZEY-sszyp1);
             }
             // Upper horisontal line
-            line((step+1)*STEPSIZEX,(step+1)*STEPSIZEY,
-                 (step)*STEPSIZEX,(step+1)*STEPSIZEY);
+            line(sszxp1,sszyp1,
+                 sszx,sszyp1);
             // Lower horisontal line
-            line((step+1)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY,
-                 (step)*STEPSIZEX,SIZEY-(step+1)*STEPSIZEY);
+            line(sszxp1,SIZEY-sszyp1,
+                 sszx,SIZEY-sszyp1);
         }
         posx+=advancex;
         posy+=advancey;
@@ -699,7 +720,7 @@ void main(void)
             if (positionx==exitx && positiony==exity) {
                 printat(40,100,"way out!");
             }
-            POKE(53280U,4);
+            POKE(SCREEN_BORDER,4);
         }
         do {
             c=cgetc();
@@ -728,7 +749,7 @@ void main(void)
             };
         } while(iv==TRUE);
         if(labyrinth[positionx+positiony*labyrinthSizeX]=='*') {
-            POKE(53280U,1);
+            POKE(SCREEN_BORDER,1);
             positionx=oldx;
             positiony=oldy;
         }
