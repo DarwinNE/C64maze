@@ -1,4 +1,5 @@
 #include<conio.h>
+#include<stdlib.h>
 #include"vic_font.h"
 
 
@@ -32,27 +33,27 @@ static unsigned char pix_pos[]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 
 char labyrinth[] =  "****************************************"
                     "*      *    *     * *   *        *     *"
-                    "* **** * ******** * *** * ****** * ** **"
+                    "* **** * ******** * *** * *** **   ** **"
                     "* * *  *   *  *   *     *   * *  *  *  *"
-                    "*   * ** ** * *** ***** *** * * *** ** *"
-                    "***** ***** *            ****** * * ****"
+                    "*   * ** ** * *** ***** * * * * *** ** *"
+                    "***** ** ** *             *** *   * ** *"
                     "*             * ** **** * *     *  *   *"
                     "* * *********** *     * * * ****** * * *"
                     "* *         *    * ** *   * *     *  * *"
                     "***** ***** * * *  *  * * * **** *  *  *"
                     "* *       * ******** ** **     * ** ****"
-                    "* * *** * * *     *  *    * **** *     *"
+                    "* * *** * * *     *  *    * ** * *     *"
                     "*     *** * ***** * ** **** *  * **** **"
                     "** ** *   *     * * *   *   * **    *  *"
                     "*  * ** ******* * * *** * *** *  ** ** *"
-                    "**   *  *          *     *     * *      *"
+                    "**   *  *          *     *     * *     *"
                     "****************************************";
 unsigned char labyrinthSizeX=40;
 unsigned char labyrinthSizeY=17;
-char startx=6;
-char starty=16;
-char positionx=6;
-char positiony=16;
+char startx;
+char starty;
+char positionx;
+char positiony;
 unsigned char style=0x1;
 
 char exitx=13;
@@ -468,9 +469,24 @@ void loadVICFont(unsigned char magnification)
         f.pos[i]=(i-' '+1)*8;
 
     f.pDesc=vic_font;
-    f.incX=8;     /* Increment in X (-1 would mean a proportional font) */
+    f.incX=8;    /* Increment in X (-1 would mean a proportional font) */
     f.incY=8;    /* Increment in Y */
     f.magnification=magnification;
+}
+
+/** Choose randomly the starting position in the maze.
+*/
+void choose_start_position()
+{
+    unsigned int time=PEEK(56328U)+(PEEK(56329U)&0x7)*10+
+        ((PEEK(56329U)&0x70)>>4)*100+(PEEK(56329U)&0x7)*1000;
+    srand(time);
+    do {
+        startx=(labyrinthSizeX*rand())/RAND_MAX;
+        starty=(labyrinthSizeY*rand())/RAND_MAX;
+    } while(labyrinth[startx+starty*labyrinthSizeX]!=' ');
+    positionx=startx;
+    positiony=starty;
 }
 
 int leftx;
@@ -518,6 +534,9 @@ void set_orientation(void)
     }
 }
 
+/** In this function, the maze view is shown from the current point and
+    orientation of the player (those are specified in global variables).
+*/
 void drawLabyrinthView()
 {
     unsigned char posx=positionx;
@@ -532,7 +551,16 @@ void drawLabyrinthView()
 
     style=0x1;
     set_orientation();
+    
+    /* Draw the maze in isometric perspective starting from the position of
+       the player and going progressively farther from him, until a wall is
+       hit or until the distance becomes greater than 5 steps.
+    */
     for(step=0;(wall==FALSE)&&(step<6);++step) {
+        /* Specify the line style so that walls and corners far from the
+           player somewhat appears to be less definite, thus adding a certain
+           3D effect.
+        */
         switch(step) {
             case 3:
                 style=0x2;
@@ -547,9 +575,11 @@ void drawLabyrinthView()
                 style=0x1;
                 break;
         }
+        // We hit a wall!
         if(labyrinth[posx+posy*labyrinthSizeX]=='*') {
             break;
         }
+        // Some pre-calculated data for wall and corner drawing.
         sszx=step*STEPSIZEX;
         sszy=step*STEPSIZEY;
         sszxp1=(step+1)*STEPSIZEX;
@@ -598,6 +628,7 @@ void drawLabyrinthView()
             line(sszxp1,SIZEY-sszyp1,
                  sszx,SIZEY-sszyp1);
         }
+        // Advance one step farther from the player.
         posx+=advancex;
         posy+=advancey;
         // Exit is in sight!
@@ -610,9 +641,11 @@ void drawLabyrinthView()
             wall=TRUE;
         }
     }
+    // We have a wall at the end of our sight
     if(wall==TRUE)
         box(step*STEPSIZEX,step*STEPSIZEY,
             SIZEX-step*STEPSIZEX,SIZEY-step*STEPSIZEY);
+    // The exit is in sight!
     if(wayout) {
         ++step;
         box(step*STEPSIZEX,step*STEPSIZEY,
@@ -622,8 +655,10 @@ void drawLabyrinthView()
         line(SIZEX-step*STEPSIZEX,step*STEPSIZEY,
             step*STEPSIZEX,SIZEY-step*STEPSIZEY);
     }
-
 }
+
+/** Be sure that the current player position is correct.
+*/
 void validate_data()
 {
     if(positionx>=labyrinthSizeX)
@@ -636,6 +671,8 @@ void validate_data()
         positiony=0;
 }
 
+/** Advance in the forward direction, following the current orientation.
+*/
 void move_forward()
 {
     switch(orientation) {
@@ -655,6 +692,8 @@ void move_forward()
     validate_data();
 }
 
+/** Go backwards one step, following the current orientation.
+*/
 void move_backwards()
 {
     switch(orientation) {
@@ -674,6 +713,8 @@ void move_backwards()
     validate_data();
 }
 
+/** Colour the right side banner in the screen view.
+*/
 void colour_banner(void)
 {
     unsigned char x;
@@ -686,18 +727,11 @@ void colour_banner(void)
     }
 }
 
-void main(void)
+/** Draw the banner on the right side of the screen.
+*/
+void draw_banner()
 {
-    unsigned char oldx=0;
-    unsigned char oldy=0;
-    char oldo=0;
-    char c;
-    char iv=TRUE;
-
-    graphics_monochrome();
     colour_banner();
-    positionx=6;
-    positiony=16;
     loadVICFont(2);
     printat(204,17,"c64maze");
     loadVICFont(1);
@@ -708,6 +742,55 @@ void main(void)
     printat(207,170,"d. bucci 2017");
     loadVICFont(2);
     line(200,0,200,199);
+}
+
+void show_maze()
+{
+    int x;
+    int x8;
+    int x8p7;
+    int y;
+    int yp;
+
+    clearHGRpage();
+    for(x=0; x<labyrinthSizeX;++x) {
+        x8=x*8;
+        x8p7=x8+7;
+        for(y=0; y<labyrinthSizeY;++y) {
+            if(labyrinth[x+y*labyrinthSizeX]=='*') {
+                yp=y<<3;
+                hor_line(x8,x8p7,yp++);
+                hor_line(x8,x8p7,yp++);
+                hor_line(x8,x8p7,yp++);
+                hor_line(x8,x8p7,yp++);
+                hor_line(x8,x8p7,yp++);
+                hor_line(x8,x8p7,yp++);
+                hor_line(x8,x8p7,yp++);
+                hor_line(x8,x8p7,yp);
+            } else if(positiony==y && positionx==x) {
+                line(x*8+2,y*8+2,x*8+5,y*8+5);
+                line(x*8+5,y*8+2,x*8+2,y*8+5);
+            }
+        }
+    }
+    cgetc();
+    clearHGRpage();
+    draw_banner();
+}
+/** Starting point of the program.
+*/
+void main(void)
+{
+    unsigned char oldx=0;
+    unsigned char oldy=0;
+    char oldo=0;
+    char c;
+    char iv=TRUE;
+
+    graphics_monochrome();
+    choose_start_position();
+    draw_banner();
+    
     while(TRUE) {
         if(oldx!=positionx || oldy!=positiony || oldo!=orientation) {
             oldx=positionx;
@@ -743,6 +826,9 @@ void main(void)
                         orientation=3;
                     else
                         --orientation;
+                    break;
+                case 'p':
+                    show_maze();
                     break;
                 default:
                     iv=TRUE;
