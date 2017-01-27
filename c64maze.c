@@ -41,7 +41,7 @@ char labyrinth[] =  "****************************************"
                     "* * *********** *     * * * ****** * * *"
                     "* *         *    * ** *   * *     *  * *"
                     "***** ***** * * *  *  * * * **** *  *  *"
-                    "* *       * ******** ** **     * ** ****"
+                    "* *       * *** **** ** **     * ** ****"
                     "* * *** * * *     *  *    * ** * *     *"
                     "*     *** * ***** * ** **** *  * **** **"
                     "** ** *   *     * * *   *   * **    *  *"
@@ -164,6 +164,7 @@ void printat(unsigned short x, unsigned short y, char *s)
     unsigned int d,e;
     unsigned int ix;
     unsigned int loc;
+    unsigned int iix;
 
     for (i=0; s[i]!='\0';++i) {
         p=0;
@@ -180,11 +181,11 @@ void printat(unsigned short x, unsigned short y, char *s)
             q=y+j;
             d=q&0xFFF8;
             e=d*40;
+            iix=x+incrementx;
             by=BASE+e+((unsigned char)q&7);
             for(k=0;a!=0;++k){
                 if (a & 0x0001) {
-                    ix=x+incrementx-k;
-                    //pset(, q);
+                    ix=iix-k;
                     loc=by+(ix&0xFFF8);
                     POKE(loc, PEEK(loc) | pix_pos[(unsigned char)ix&7]);
                 } if(t==mm){
@@ -759,56 +760,49 @@ void draw_banner()
 */
 void show_maze()
 {
-    int x;
-    int x8;
-    int x8p7;
-    int y;
-    int yp;
+    unsigned char x;
+    unsigned char y;
+    unsigned int by;
+    char *pt;
 
     style=0x1;
 
     clearHGRpage();
-    for(x=0; x<labyrinthSizeX;++x) {
-        x8=x*8;
-        x8p7=x8+7;
-        for(y=0; y<labyrinthSizeY;++y) {
-            if(labyrinth[x+y*labyrinthSizeX]=='*') {
-                yp=y<<3;
-                hor_line(x8,x8p7,yp++);
-                hor_line(x8,x8p7,yp++);
-                hor_line(x8,x8p7,yp++);
-                hor_line(x8,x8p7,yp++);
-                hor_line(x8,x8p7,yp++);
-                hor_line(x8,x8p7,yp++);
-                hor_line(x8,x8p7,yp++);
-                hor_line(x8,x8p7,yp);
+    for(y=0; y<labyrinthSizeY;++y) {
+        by=COLOR_MEM+y*40;
+        pt=labyrinth+y*labyrinthSizeX;
+        for(x=0; x<labyrinthSizeX;++x) {
+            if(pt[x]=='*') {
+                POKE(by,0);
             } else if(positiony==y && positionx==x) {
                 box(x*8+2,y*8+2,x*8+5,y*8+5);
                 switch(orientation) {
                     case 0:
-                        line(x8+3,y*8,x8+3,y*8+2);
-                        line(x8+4,y*8,x8+4,y*8+2);
+                        line(x*8+3,y*8,x*8+3,y*8+2);
+                        line(x*8+4,y*8,x*8+4,y*8+2);
                         break;
                     case 1:
-                        line(x8,y*8+3,x8+2,y*8+3);
-                        line(x8,y*8+4,x8+2,y*8+4);
+                        line(x*8,y*8+3,x*8+2,y*8+3);
+                        line(x*8,y*8+4,x*8+2,y*8+4);
                         break;
                     case 2:
-                        line(x8+3,y*8+5,x8+3,y*8+7);
-                        line(x8+4,y*8+5,x8+4,y*8+7);
+                        line(x*8+3,y*8+5,x*8+3,y*8+7);
+                        line(x*8+4,y*8+5,x*8+4,y*8+7);
                         break;
                     case 3:
-                        line(x8+5,y*8+3,x8+7,y*8+3);
-                        line(x8+5,y*8+4,x8+7,y*8+4);
+                        line(x*8+5,y*8+3,x*8+7,y*8+3);
+                        line(x*8+5,y*8+4,x*8+7,y*8+4);
                         break;
                 }
             }
+            ++by;
         }
     }
     cgetc();
     clearHGRpage();
     draw_banner();
 }
+
 /** Starting point of the program.
 */
 void main(void)
