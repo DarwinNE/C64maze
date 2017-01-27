@@ -159,6 +159,11 @@ void printat(unsigned short x, unsigned short y, char *s)
     unsigned char incrementy=f.incY*mm;
     unsigned int ppos;
     unsigned char q,r;
+    
+    unsigned int by;
+    unsigned int d,e;
+    unsigned int ix;
+    unsigned int loc;
 
     for (i=0; s[i]!='\0';++i) {
         p=0;
@@ -173,10 +178,16 @@ void printat(unsigned short x, unsigned short y, char *s)
             }
             t=1;
             q=y+j;
+            d=q&0xFFF8;
+            e=d*40;
+            by=BASE+e+((unsigned char)q&7);
             for(k=0;a!=0;++k){
-                if (a & 0x0001)
-                    pset(x+incrementx-k, q);
-                if(t==mm){
+                if (a & 0x0001) {
+                    ix=x+incrementx-k;
+                    //pset(, q);
+                    loc=by+(ix&0xFFF8);
+                    POKE(loc, PEEK(loc) | pix_pos[(unsigned char)ix&7]);
+                } if(t==mm){
                     a>>=1;
                     t=1;
                 } else {
@@ -310,7 +321,7 @@ void hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
     e=d*40;
     by=BASE+e+((unsigned char)y1&7);
     for(;x1<=x2;++x1){
-        if((x1&7)==0 && (x1+8)<=x2) {
+        if((x1&7)==0 && (x1+7)<=x2) {
             POKE(by+(x1&0xFFF8),0xFF);
             x1+=7; // because the for statement will add 1.
             continue;
@@ -478,12 +489,11 @@ void loadVICFont(unsigned char magnification)
 */
 void choose_start_position()
 {
-    unsigned int time=PEEK(56328U)+(PEEK(56329U)&0x7)*10+
-        ((PEEK(56329U)&0x70)>>4)*100+(PEEK(56329U)&0x7)*1000;
+    unsigned int time=PEEK(160)+PEEK(161)*256;
     srand(time);
     do {
-        startx=(labyrinthSizeX*rand())/RAND_MAX;
-        starty=(labyrinthSizeY*rand())/RAND_MAX;
+        startx=(labyrinthSizeX*(rand()/(RAND_MAX/100)))/100;
+        starty=(labyrinthSizeY*(rand()/(RAND_MAX/100)))/100;
     } while(labyrinth[startx+starty*labyrinthSizeX]!=' ');
     positionx=startx;
     positiony=starty;
@@ -739,11 +749,14 @@ void draw_banner()
     printat(260,55,"t");
     printat(252,65,"f+g");
     printat(260,75,"v");
+    printat(207,100,"[p] view maze");
     printat(207,170,"d. bucci 2017");
     loadVICFont(2);
     line(200,0,200,199);
 }
 
+/** Show the maze with the current position and orientation.
+*/
 void show_maze()
 {
     int x;
@@ -751,6 +764,8 @@ void show_maze()
     int x8p7;
     int y;
     int yp;
+
+    style=0x1;
 
     clearHGRpage();
     for(x=0; x<labyrinthSizeX;++x) {
@@ -768,8 +783,25 @@ void show_maze()
                 hor_line(x8,x8p7,yp++);
                 hor_line(x8,x8p7,yp);
             } else if(positiony==y && positionx==x) {
-                line(x*8+2,y*8+2,x*8+5,y*8+5);
-                line(x*8+5,y*8+2,x*8+2,y*8+5);
+                box(x*8+2,y*8+2,x*8+5,y*8+5);
+                switch(orientation) {
+                    case 0:
+                        line(x8+3,y*8,x8+3,y*8+2);
+                        line(x8+4,y*8,x8+4,y*8+2);
+                        break;
+                    case 1:
+                        line(x8,y*8+3,x8+2,y*8+3);
+                        line(x8,y*8+4,x8+2,y*8+4);
+                        break;
+                    case 2:
+                        line(x8+3,y*8+5,x8+3,y*8+7);
+                        line(x8+4,y*8+5,x8+4,y*8+7);
+                        break;
+                    case 3:
+                        line(x8+5,y*8+3,x8+7,y*8+3);
+                        line(x8+5,y*8+4,x8+7,y*8+4);
+                        break;
+                }
             }
         }
     }
@@ -829,6 +861,8 @@ void main(void)
                     break;
                 case 'p':
                     show_maze();
+                    // force a redraw.
+                    oldx=0;
                     break;
                 default:
                     iv=TRUE;
