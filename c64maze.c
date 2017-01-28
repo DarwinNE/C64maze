@@ -45,8 +45,8 @@ char labyrinth[] =  "****************************************"
                     "*  * ** ******* * * *** * *** *  ** ** *"
                     "**   *  *         * *   *      * *     *"
                     "****************************************";
-unsigned char labyrinthSizeX=40;
-unsigned char labyrinthSizeY=17;
+#define labyrinthSizeX 40
+#define labyrinthSizeY 17
 char startx;
 char starty;
 char positionx;
@@ -161,28 +161,27 @@ void printat(unsigned short x, unsigned short y, char *s)
     unsigned int d,e;
     unsigned int ix;
     unsigned int loc;
-    unsigned int iix;
-
     for (i=0; s[i]!='\0';++i) {
         p=0;
-        r=0;
+        r=1;
         ppos=f.pos[s[i]];
+        x+=incrementx;
         for (j=0;j<incrementy;++j) {
             a=f.pDesc[ppos+p];
-            ++r;
             if(r==mm){
                 ++p;
-                r=0;
+                r=1;
+            } else {
+                ++r;
             }
             t=1;
             q=y+j;
             d=q&0xFFF8;
             e=d*40;
-            iix=x+incrementx;
             by=BASE+e+((unsigned char)q&7);
             for(k=0;a!=0;++k){
                 if (a & 0x0001) {
-                    ix=iix-k;
+                    ix=x-k;
                     loc=by+(ix&0xFFF8);
                     POKE(loc, PEEK(loc) | pix_pos[(unsigned char)ix&7]);
                 } if(t==mm){
@@ -193,7 +192,6 @@ void printat(unsigned short x, unsigned short y, char *s)
                 }
             }
         }
-        x+=incrementx;
     }
 }
 
