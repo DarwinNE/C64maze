@@ -1,6 +1,9 @@
 #include<conio.h>
 #include<stdlib.h>
+#include<6502.h>
+#include<stdio.h>
 #include"vic_font.h"
+#include"sid_tune.h"
 
 #define POKE(addr,val)     (*(unsigned char*) (addr) = (val))
 #define PEEK(addr)         (*(unsigned char*) (addr))
@@ -11,8 +14,8 @@
 #define VIC_II_SCREEN_CHAR 53272U
 #define SCREEN_BORDER 53280U
 
-#define BASE 0x6000U
-#define COLOR_MEM 0x4400U
+#define BASE 0xA000U
+#define COLOR_MEM 0x8C00U
 
 #define a_abs(a) ((a)>0 ? (a):(-a))
 #define a_max(a,b) (((a)>(b))?(a):(b))
@@ -24,7 +27,6 @@
 #define SIZEY 199
 #define STEPSIZEX  15
 #define STEPSIZEY  15
-
 
 static unsigned char pix_pos[]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 
@@ -95,38 +97,38 @@ void clearHGRpage(void)
        address of the HGR page */
     asm("       ldy #0");
     asm("       tya");
-    asm("loop:  sta $6000,y");
-    asm("       sta $6100,y");
-    asm("       sta $6200,y");
-    asm("       sta $6300,y");
-    asm("       sta $6400,y");
-    asm("       sta $6500,y");
-    asm("       sta $6600,y");
-    asm("       sta $6700,y");
-    asm("       sta $6800,y");
-    asm("       sta $6900,y");
-    asm("       sta $6A00,y");
-    asm("       sta $6B00,y");
-    asm("       sta $6C00,y");
-    asm("       sta $6D00,y");
-    asm("       sta $6E00,y");
-    asm("       sta $6F00,y");
-    asm("       sta $7000,y");
-    asm("       sta $7100,y");
-    asm("       sta $7200,y");
-    asm("       sta $7300,y");
-    asm("       sta $7400,y");
-    asm("       sta $7500,y");
-    asm("       sta $7600,y");
-    asm("       sta $7700,y");
-    asm("       sta $7800,y");
-    asm("       sta $7900,y");
-    asm("       sta $7A00,y");
-    asm("       sta $7B00,y");
-    asm("       sta $7C00,y");
-    asm("       sta $7D00,y");
-    asm("       sta $7E00,y");
-    asm("       sta $7F00,y");
+    asm("loop:  sta $A000,y");
+    asm("       sta $A100,y");
+    asm("       sta $A200,y");
+    asm("       sta $A300,y");
+    asm("       sta $A400,y");
+    asm("       sta $A500,y");
+    asm("       sta $A600,y");
+    asm("       sta $A700,y");
+    asm("       sta $A800,y");
+    asm("       sta $A900,y");
+    asm("       sta $AA00,y");
+    asm("       sta $AB00,y");
+    asm("       sta $AC00,y");
+    asm("       sta $AD00,y");
+    asm("       sta $AE00,y");
+    asm("       sta $AF00,y");
+    asm("       sta $B000,y");
+    asm("       sta $B100,y");
+    asm("       sta $B200,y");
+    asm("       sta $B300,y");
+    asm("       sta $B400,y");
+    asm("       sta $B500,y");
+    asm("       sta $B600,y");
+    asm("       sta $B700,y");
+    asm("       sta $B800,y");
+    asm("       sta $B900,y");
+    asm("       sta $BA00,y");
+    asm("       sta $BB00,y");
+    asm("       sta $BC00,y");
+    asm("       sta $BD00,y");
+    asm("       sta $BE00,y");
+    asm("       sta $BE40,y");
     asm("       iny");
     asm("       bne loop");
 
@@ -135,10 +137,10 @@ void clearHGRpage(void)
         POKE(i,3);*/
     asm("       ldy #0");
     asm("       lda #3");
-    asm("loop1: sta $4400,y");
-    asm("       sta $4500,y");
-    asm("       sta $4600,y");
-    asm("       sta $4700,y");
+    asm("loop1: sta $8C00,y");
+    asm("       sta $8D00,y");
+    asm("       sta $8E00,y");
+    asm("       sta $8F00,y");
     asm("       iny");
     asm("       bne loop1");
 }
@@ -156,7 +158,7 @@ void printat(unsigned short x, unsigned short y, char *s)
     unsigned char incrementy=f.incY*mm;
     unsigned int ppos;
     unsigned char q,r;
-    
+
     unsigned int by;
     unsigned int d,e;
     unsigned int ix;
@@ -210,32 +212,32 @@ void clearMazeRegion(void)
     // Very fast version of the routine.
     asm("       ldy #0");
     asm("       tya");
-    asm("loop2:  sta $6000,y");
-    asm("       sta $6000+320,y");
-    asm("       sta $6000+2*320,y");
-    asm("       sta $6000+3*320,y");
-    asm("       sta $6000+4*320,y");
-    asm("       sta $6000+5*320,y");
-    asm("       sta $6000+6*320,y");
-    asm("       sta $6000+7*320,y");
-    asm("       sta $6000+8*320,y");
-    asm("       sta $6000+9*320,y");
-    asm("       sta $6000+10*320,y");
-    asm("       sta $6000+11*320,y");
-    asm("       sta $6000+12*320,y");
-    asm("       sta $6000+13*320,y");
-    asm("       sta $6000+14*320,y");
-    asm("       sta $6000+15*320,y");
-    asm("       sta $6000+16*320,y");
-    asm("       sta $6000+17*320,y");
-    asm("       sta $6000+18*320,y");
-    asm("       sta $6000+19*320,y");
-    asm("       sta $6000+20*320,y");
-    asm("       sta $6000+21*320,y");
-    asm("       sta $6000+22*320,y");
-    asm("       sta $6000+23*320,y");
-    asm("       sta $6000+24*320,y");
-    asm("       sta $6000+25*320,y");
+    asm("loop2:  sta $A000,y");
+    asm("       sta $A000+320,y");
+    asm("       sta $A000+2*320,y");
+    asm("       sta $A000+3*320,y");
+    asm("       sta $A000+4*320,y");
+    asm("       sta $A000+5*320,y");
+    asm("       sta $A000+6*320,y");
+    asm("       sta $A000+7*320,y");
+    asm("       sta $A000+8*320,y");
+    asm("       sta $A000+9*320,y");
+    asm("       sta $A000+10*320,y");
+    asm("       sta $A000+11*320,y");
+    asm("       sta $A000+12*320,y");
+    asm("       sta $A000+13*320,y");
+    asm("       sta $A000+14*320,y");
+    asm("       sta $A000+15*320,y");
+    asm("       sta $A000+16*320,y");
+    asm("       sta $A000+17*320,y");
+    asm("       sta $A000+18*320,y");
+    asm("       sta $A000+19*320,y");
+    asm("       sta $A000+20*320,y");
+    asm("       sta $A000+21*320,y");
+    asm("       sta $A000+22*320,y");
+    asm("       sta $A000+23*320,y");
+    asm("       sta $A000+24*320,y");
+    asm("       sta $A000+25*320,y");
     asm("       iny");
     asm("       cpy #200");
     asm("       bne loop2");
@@ -246,9 +248,9 @@ void clearMazeRegion(void)
 */
 void graphics_monochrome(void)
 {
-    POKE(56576U,(PEEK(56576U) & 0xFC)|2);    // Second bank for the VIC II
-    POKE(VIC_II_SCREEN_CHAR,(PEEK(VIC_II_SCREEN_CHAR)&240)|12);
-    POKE(VIC_II_Y_SCROLL,   PEEK(VIC_II_Y_SCROLL)|BMM);     // HGR on
+    POKE (56576U, 0x01);
+    POKE (53272U, 0x38);
+    POKE (53265U, 0x36);
     clearHGRpage();
 }
 
@@ -557,7 +559,7 @@ void drawLabyrinthView()
 
     style=0x1;
     set_orientation();
-    
+
     /* Draw the maze in isometric perspective starting from the position of
        the player and going progressively farther from him, until a wall is
        hit or until the distance becomes greater than 5 steps.
@@ -746,6 +748,7 @@ void draw_banner()
     printat(252,65,"f+g");
     printat(260,75,"v");
     printat(207,100,"[p] view maze");
+    printat(207,110,"[m] music 1/0");
     printat(207,170,"d. bucci 2017");
     loadVICFont(2);
     line(200,0,200,199);
@@ -798,6 +801,97 @@ void show_maze()
     draw_banner();
 }
 
+#define STACK_SIZE 256
+unsigned char stackSize[STACK_SIZE];
+
+unsigned int cnt;
+unsigned char *list1;
+unsigned char *ptr1;
+unsigned char wsh1;
+
+unsigned char *list2;
+unsigned char *ptr2;
+unsigned char wsh2;
+
+unsigned char *list3;
+unsigned char *ptr3;
+unsigned char wsh3;
+
+// byte 1: lo byte timestamp in 1/60's of second
+// byte 2: hi byte timestamp in 1/60's of second
+// byte 3: message
+// byte 4: first byte of the message (if applicable)
+// byte 5: second byte of the message (if applicable)
+//
+
+void process_voice(unsigned char **ptr, unsigned char *sid_pointer,
+    unsigned char *wsh)
+{
+    unsigned int timestamp=**ptr+ (*(*ptr+1)<<8);
+    if(timestamp>cnt) {
+        return;
+    }
+    ++*ptr;
+    ++*ptr;
+    switch(**ptr) {
+        case NOTE_CODE:                 // Note event
+            POKE(sid_pointer,*(++*ptr));        // Frequency lo
+            POKE(sid_pointer+1,*(++*ptr));      // Frequency hi
+            POKE(sid_pointer+4,0);
+            POKE(sid_pointer+4,*wsh);          // Note on
+            ++*ptr;
+            break;
+        case PAUSE_CODE:                // Pause event
+            POKE(sid_pointer+4,0);             // Note off
+            ++*ptr;
+            break;
+        case ENVELOPE_CODE:             // Change envelope
+            *wsh=*(++*ptr);             // Wave shape
+            POKE(sid_pointer+2,*(++*ptr));     // Duty cycle lo
+            POKE(sid_pointer+3,*(++*ptr));     // Dyty cycle hi
+            POKE(sid_pointer+5,*(++*ptr));     // AD
+            POKE(sid_pointer+6,*(++*ptr));     // SR
+            ++*ptr;
+            break;
+        case REWIND_CODE:
+            ptr1=list1;
+            ptr2=list2;
+            ptr3=list3;
+            cnt=0;
+            break;
+    }
+}
+
+unsigned char sound_irq(void)
+{
+    if(ptr1!=NULL) {
+        process_voice(&ptr1, (unsigned char*)0xD400U, &wsh1);
+    }
+    if(ptr2!=NULL) {
+        process_voice(&ptr2, (unsigned char*)0xD407U, &wsh2);
+    }
+    if(ptr3!=NULL) {
+        process_voice(&ptr3, (unsigned char*)0xD40EU, &wsh3);
+    }
+    ++cnt;
+    return (IRQ_NOT_HANDLED);
+}
+
+
+void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
+{
+    POKE(0xD418,15);
+    ptr1=list1=l1;
+    ptr2=list2=l2;
+    ptr3=list3=l3;
+    cnt=0;
+
+    SEI();
+    set_irq(&sound_irq, stackSize, STACK_SIZE);
+    CLI();
+}
+
+
 /** Starting point of the program.
 */
 void main(void)
@@ -807,11 +901,14 @@ void main(void)
     char oldo=0;
     char c;
     char iv=TRUE;
+    unsigned char music=TRUE;
+
+    start_sound(music_v1, music_v2, music_v3);
 
     graphics_monochrome();
     choose_start_position();
     draw_banner();
-    
+
     while(TRUE) {
         if(oldx!=positionx || oldy!=positiony || oldo!=orientation) {
             oldx=positionx;
@@ -853,6 +950,14 @@ void main(void)
                     // force a redraw.
                     oldx=0;
                     break;
+                case 'm':
+                    if(music) {
+                        POKE(0xD418,0);
+                        music=FALSE;
+                    } else {
+                        POKE(0xD418,15);
+                        music=TRUE;
+                    }
                 default:
                     iv=TRUE;
             };
