@@ -2,9 +2,6 @@
 #include<stdlib.h>
 #include"vic_font.h"
 
-
-typedef unsigned char byte;
-
 #define POKE(addr,val)     (*(unsigned char*) (addr) = (val))
 #define PEEK(addr)         (*(unsigned char*) (addr))
 
@@ -34,19 +31,19 @@ static unsigned char pix_pos[]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 char labyrinth[] =  "****************************************"
                     "*      *    *     * *   *        *     *"
                     "* **** * ******** * *** * *** **   ** **"
-                    "* * *  *   *  *   *     *   * *  *  *  *"
-                    "*   * ** ** * *** ***** * * * * *** ** *"
-                    "***** ** ** *             *** *   * ** *"
+                    "* * ** *   *  *   *     *   * *  *  *  *"
+                    "*   *  * *  * *** ***** * * * * ***  * *"
+                    "***** ** ** *             *** *   **** *"
                     "*             * ** **** * *     *  *   *"
                     "* * *********** *     * * * ****** * * *"
-                    "* *         *    * ** *   * *     *  * *"
-                    "***** ***** * * *  *  * * * **** *  *  *"
-                    "* *       * *** **** ** **     * ** ****"
+                    "* *         *   ** ** *   * *        * *"
+                    "***** ***** * * *  *  * * * **** ** *  *"
+                    "* *       * *** **** ** **     *  * ****"
                     "* * *** * * *     *  *    * ** * *     *"
                     "*     *** * ***** * ** **** *  * **** **"
                     "** ** *   *     * * *   *   * **    *  *"
                     "*  * ** ******* * * *** * *** *  ** ** *"
-                    "**   *  *          *     *     * *     *"
+                    "**   *  *         * *   *      * *     *"
                     "****************************************";
 unsigned char labyrinthSizeX=40;
 unsigned char labyrinthSizeY=17;
@@ -455,7 +452,7 @@ void box(unsigned short x1, unsigned short y1, unsigned short x2,
     yul=(y2>y1) ? y1 : y2;
     xlr=(x2>x1) ? x2 : x1;
     ylr=(y2>y1) ? y2 : y1;
-    // The simplified code does not handle styled lines, so one must check
+    // The simplified code does not handle every style lines, so one must check
     // for it.
     if(style==0x1) {
         hor_line(xul, xlr, yul);
@@ -773,7 +770,7 @@ void show_maze()
         pt=labyrinth+y*labyrinthSizeX;
         for(x=0; x<labyrinthSizeX;++x) {
             if(pt[x]=='*') {
-                POKE(by,0);
+                POKE(by,9);
             } else if(positiony==y && positionx==x) {
                 box(x*8+2,y*8+2,x*8+5,y*8+5);
                 switch(orientation) {
