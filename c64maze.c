@@ -984,8 +984,8 @@ void main(void)
                 write_time(time_spent,0);
                 printat(50,100,time_spent);
                 loadVICFont(1);
-                printat(50, 140, "press a key");
-                printat(32, 150, "to play again");
+                printat(55, 140,  "press a key");
+                printat(47, 150, "to play again");
                 cgetc();
                 oldx=0;
                 goto restart;   // No program for the C64 would be complete
