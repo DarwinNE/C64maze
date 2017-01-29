@@ -749,9 +749,54 @@ void draw_banner()
     printat(260,75,"v");
     printat(207,100,"[p] view maze");
     printat(207,110,"[m] music 1/0");
+    printat(207,120,"[a] restart  ");
     printat(207,170,"d. bucci 2017");
     loadVICFont(2);
     line(200,0,200,199);
+}
+
+long start_time;
+
+long get_current_time(void)
+{
+    long ctime=((char)PEEK(160));
+    ctime<<=8;
+    ctime+=((char)PEEK(161));
+    ctime<<=8;
+    ctime+=((char)PEEK(162));
+    return ctime;
+}
+
+char *write_time(char *message, unsigned char start)
+{
+    long approx=0;
+    char thousands=0;
+    char hundreds=0;
+    char tens=0;
+    char seconds=0;
+    approx=get_current_time()-start_time;
+    if(approx>60*1000) {
+        thousands = approx/60l/1000l;
+        approx-=thousands*60l*1000l;
+    }
+    if(approx>60*100) {
+        hundreds= approx/60l/100l;
+        approx-=hundreds*60l*100l;
+    }
+    if(approx>60*10) {
+        tens= approx/60l/10l;
+        approx-=tens*60l*10l;
+    }
+    if(approx>60) {
+        seconds=approx/60l;
+        approx-=seconds*60l;
+    }
+
+    message[start++]= thousands+'0';
+    message[start++]= hundreds+'0';
+    message[start++]= tens + '0';
+    message[start++]= seconds + '0';
+    return message;
 }
 
 /** Show the maze with the current position and orientation.
@@ -763,7 +808,11 @@ void show_maze()
     unsigned int by;
     char *pt;
 
+    char message[]="elapsed:      s";
+
     style=0x1;
+
+    start_time-=60l*30l; // 30 seconds penalty.
 
     clearHGRpage();
     for(y=0; y<labyrinthSizeY;++y) {
@@ -796,6 +845,8 @@ void show_maze()
             ++by;
         }
     }
+    write_time(message,9);
+    printat(50,170,message);
     cgetc();
     clearHGRpage();
     draw_banner();
@@ -891,6 +942,12 @@ void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
     CLI();
 }
 
+void start_game(void)
+{
+    start_time=get_current_time();
+    choose_start_position();
+    draw_banner();
+}
 
 /** Starting point of the program.
 */
@@ -902,12 +959,13 @@ void main(void)
     char c;
     char iv=TRUE;
     unsigned char music=TRUE;
+    char time_spent[]="     s";
 
     start_sound(music_v1, music_v2, music_v3);
 
     graphics_monochrome();
-    choose_start_position();
-    draw_banner();
+    restart:
+    start_game();
 
     while(TRUE) {
         if(oldx!=positionx || oldy!=positiony || oldo!=orientation) {
@@ -919,7 +977,16 @@ void main(void)
             if (positionx==startx && positiony==starty)
                 printat(40,100,"step in!");
             if (positionx==exitx && positiony==exity) {
-                printat(40,100,"way out!");
+                printat(40,70,"way out!");
+                write_time(time_spent,0);
+                printat(50,100,time_spent);
+                loadVICFont(1);
+                printat(50, 140, "press a key");
+                printat(32, 150, "to play again");
+                cgetc();
+                oldx=0;
+                goto restart;   // No program for the C64 would be complete
+                                // without at least a GOTO statement somewhere.
             }
             POKE(SCREEN_BORDER,4);
         }
@@ -927,37 +994,43 @@ void main(void)
             c=cgetc();
             iv=FALSE;
             switch(c) {
-                case 't':
+                case 't':   // Forward
                     move_forward();
                     break;
-                case 'v':
+                case 'v':   // Backwards
                     move_backwards();
                     break;
-                case 'f':
+                case 'f':   // Turn left
                     if(orientation==3)
                         orientation=0;
                     else
                         ++orientation;
                     break;
-                case 'g':
+                case 'g':   // Turn right
                     if(orientation==0)
                         orientation=3;
                     else
                         --orientation;
                     break;
-                case 'p':
+                case 'p':   // Show maze and position
                     show_maze();
                     // force a redraw.
                     oldx=0;
                     break;
-                case 'm':
-                    if(music) {
+                case 'a':   // Start again
+                    clearHGRpage();
+                    start_game();
+                    oldx=0;
+                    break;
+                case 'm':   // Toggle music on/off
+                    if(music==TRUE) {
                         POKE(0xD418,0);
                         music=FALSE;
                     } else {
                         POKE(0xD418,15);
                         music=TRUE;
                     }
+                    break;
                 default:
                     iv=TRUE;
             };
