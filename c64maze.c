@@ -845,6 +845,9 @@ void show_maze()
             ++by;
         }
     }
+    f.magnification=1;
+    printat(15,150,"https://github.com/darwinne/c64maze");
+    f.magnification=2;
     write_time(message,9);
     printat(50,170,message);
     cgetc();
