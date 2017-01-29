@@ -849,7 +849,7 @@ void show_maze()
     printat(15,150,"https://github.com/darwinne/c64maze");
     f.magnification=2;
     write_time(message,9);
-    printat(50,170,message);
+    printat(40,170,message);
     cgetc();
     clearHGRpage();
     draw_banner();
