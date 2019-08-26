@@ -1,4 +1,5 @@
 c64maze.s
+C64.s
 c64maze
 c64maze.o
 *.o
