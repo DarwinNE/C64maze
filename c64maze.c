@@ -1,34 +1,14 @@
-#include<conio.h>
 #include<stdlib.h>
-#include<6502.h>
 #include<stdio.h>
-#include"vic_font.h"
+#include "c64maze.h"
 #include"sid_tune.h"
+#define EXPAND1(x) x
+#define EXPAND2(x, y)    EXPAND1(x)y
+#define EXPAND3(x, y, z) EXPAND2(x, y)z
 
-#define POKE(addr,val)     (*(unsigned char*) (addr) = (val))
-#define PEEK(addr)         (*(unsigned char*) (addr))
-
-#define VIC_II_START 53248U
-#define VIC_II_Y_SCROLL 53265U
-#define     BMM 32  // Monochromatic high resolution mode
-#define VIC_II_SCREEN_CHAR 53272U
-#define SCREEN_BORDER 53280U
-
-#define BASE 0xA000U
-#define COLOR_MEM 0x8C00U
-
-#define a_abs(a) ((a)>0 ? (a):(-a))
-#define a_max(a,b) (((a)>(b))?(a):(b))
-#define a_sign(a) ((a)>0?1:((a)==0?0:(-1)))
-#define TRUE  0xFF
-#define FALSE 0x00
-
-#define SIZEX 200
-#define SIZEY 199
-#define STEPSIZEX  15
-#define STEPSIZEY  15
-
-static unsigned char pix_pos[]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
+#undef INCLUDE_NAME
+#define INCLUDE_NAME <ports/EXPAND2(PLATFORM_MAZE,.h)>
+#include INCLUDE_NAME
 
 char labyrinth[] =  "****************************************"
                     "*      *    *     * *   *        *     *"
@@ -47,8 +27,7 @@ char labyrinth[] =  "****************************************"
                     "*  * ** ******* * * *** * *** *  ** ** *"
                     "**   *  *         * *   *      * *     *"
                     "****************************************";
-#define labyrinthSizeX 40
-#define labyrinthSizeY 17
+
 char startx;
 char starty;
 char positionx;
@@ -63,378 +42,55 @@ char exity=1;
         3 = east
     */
 char orientation=0;
-
-struct font{
-    unsigned char *pDesc;   /* Pointer to the character raster array */
-    unsigned int pos[256]; /* Position of the symbol */
-    unsigned char incX;     /* Increment in X (-1 means a proportional font) */
-    unsigned char incY;     /* Increment in Y */
-    unsigned char magnification;  /* Magnification */
-};
-
-struct font f;
-
 /* Turn on a pixel by accessing directly to the video RAM */
 void pset(unsigned int x, unsigned int y)
 {
-    static unsigned int d;
-    static unsigned int e;
-    static unsigned int by;
-    d=y&0xFFF8;
-    e=d*40;
-    by=BASE+e+(x&0xFFF8)+((unsigned char)y&7);
-    POKE(by, PEEK(by) | pix_pos[(unsigned char)x&7]);
-}
-
-void clearHGRpage(void)
-{
-    //unsigned int i;
-    // Clear HGR page (too slow!)
-    /*for(i=BASE;i<BASE+8000;++i)
-        POKE(i,0);*/
-    /* The fastest version you can possibly imagine, with an unrolled loop .
-       Do not forget to change the addresses if you need to modify the base
-       address of the HGR page */
-    asm("       ldy #0");
-    asm("       tya");
-    asm("loop:  sta $A000,y");
-    asm("       sta $A100,y");
-    asm("       sta $A200,y");
-    asm("       sta $A300,y");
-    asm("       sta $A400,y");
-    asm("       sta $A500,y");
-    asm("       sta $A600,y");
-    asm("       sta $A700,y");
-    asm("       sta $A800,y");
-    asm("       sta $A900,y");
-    asm("       sta $AA00,y");
-    asm("       sta $AB00,y");
-    asm("       sta $AC00,y");
-    asm("       sta $AD00,y");
-    asm("       sta $AE00,y");
-    asm("       sta $AF00,y");
-    asm("       sta $B000,y");
-    asm("       sta $B100,y");
-    asm("       sta $B200,y");
-    asm("       sta $B300,y");
-    asm("       sta $B400,y");
-    asm("       sta $B500,y");
-    asm("       sta $B600,y");
-    asm("       sta $B700,y");
-    asm("       sta $B800,y");
-    asm("       sta $B900,y");
-    asm("       sta $BA00,y");
-    asm("       sta $BB00,y");
-    asm("       sta $BC00,y");
-    asm("       sta $BD00,y");
-    asm("       sta $BE00,y");
-    asm("       sta $BE40,y");
-    asm("       iny");
-    asm("       bne loop");
-
-    // Setup color memory
-    /*for(i=COLOR_MEM;i<COLOR_MEM+1000;++i)
-        POKE(i,3);*/
-    asm("       ldy #0");
-    asm("       lda #3");
-    asm("loop1: sta $8C00,y");
-    asm("       sta $8D00,y");
-    asm("       sta $8E00,y");
-    asm("       sta $8F00,y");
-    asm("       iny");
-    asm("       bne loop1");
+    port_pset(x, y);
 }
 
 /* printat prints a text at the given location unsing the font described
    by the structure font */
 void printat(unsigned short x, unsigned short y, char *s)
 {
-    unsigned char i,j,k;
-    unsigned char a;
-    unsigned char t;
-    unsigned int p;
-    unsigned char mm=f.magnification;
-    unsigned char incrementx=f.incX*mm;
-    unsigned char incrementy=f.incY*mm;
-    unsigned int ppos;
-    unsigned char q,r;
-
-    unsigned int by;
-    unsigned int d,e;
-    unsigned int ix;
-    unsigned int loc;
-    for (i=0; s[i]!='\0';++i) {
-        p=0;
-        r=1;
-        ppos=f.pos[s[i]];
-        x+=incrementx;
-        for (j=0;j<incrementy;++j) {
-            a=f.pDesc[ppos+p];
-            if(r==mm){
-                ++p;
-                r=1;
-            } else {
-                ++r;
-            }
-            t=1;
-            q=y+j;
-            d=q&0xFFF8;
-            e=d*40;
-            by=BASE+e+((unsigned char)q&7);
-            for(k=0;a!=0;++k){
-                if (a & 0x0001) {
-                    ix=x-k;
-                    loc=by+(ix&0xFFF8);
-                    POKE(loc, PEEK(loc) | pix_pos[(unsigned char)ix&7]);
-                } if(t==mm){
-                    a>>=1;
-                    t=1;
-                } else {
-                    ++t;
-                }
-            }
-        }
-    }
+    port_printat(x, y, s);
 }
 
 void clearMazeRegion(void)
 {
-    /*unsigned char x;
-    unsigned char y;
-    unsigned int by=BASE;
-    // Clear the leftmost part of the screen
-
-    for(y=0;y<25;++y) {
-        for(x=0;x<200;++x)
-            POKE(by++,0);
-        by+=120;
-    }*/
-    // Very fast version of the routine.
-    asm("       ldy #0");
-    asm("       tya");
-    asm("loop2:  sta $A000,y");
-    asm("       sta $A000+320,y");
-    asm("       sta $A000+2*320,y");
-    asm("       sta $A000+3*320,y");
-    asm("       sta $A000+4*320,y");
-    asm("       sta $A000+5*320,y");
-    asm("       sta $A000+6*320,y");
-    asm("       sta $A000+7*320,y");
-    asm("       sta $A000+8*320,y");
-    asm("       sta $A000+9*320,y");
-    asm("       sta $A000+10*320,y");
-    asm("       sta $A000+11*320,y");
-    asm("       sta $A000+12*320,y");
-    asm("       sta $A000+13*320,y");
-    asm("       sta $A000+14*320,y");
-    asm("       sta $A000+15*320,y");
-    asm("       sta $A000+16*320,y");
-    asm("       sta $A000+17*320,y");
-    asm("       sta $A000+18*320,y");
-    asm("       sta $A000+19*320,y");
-    asm("       sta $A000+20*320,y");
-    asm("       sta $A000+21*320,y");
-    asm("       sta $A000+22*320,y");
-    asm("       sta $A000+23*320,y");
-    asm("       sta $A000+24*320,y");
-    asm("       sta $A000+25*320,y");
-    asm("       iny");
-    asm("       cpy #200");
-    asm("       bne loop2");
-
+    port_clearMazeRegion();
 }
 
-/** Switch on the HGR monochrome graphic mode.
-*/
-void graphics_monochrome(void)
+void fflushMazeRegion(void)
 {
-    POKE (56576U, 0x01);
-    POKE (53272U, 0x38);
-    POKE (53265U, 0x36);
-    clearHGRpage();
+    port_fflushMazeRegion();
+}
+
+void graphics_init(void)
+{
+    port_graphics_init();
 }
 
 void vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
 {
-    static unsigned int d;
-    static unsigned int e;
-    static unsigned int by;
-    static char v;
-    static unsigned int cc;
-
-    cc=BASE+(x1&0xFFF8);
-    v=pix_pos[(unsigned char)x1&7];
-    for(;y1<=y2;++y1){
-        if((y1&7)==0 && (y1+8)<=y2) {
-            d=y1&0xFFF8;
-            e=d*40;
-            by=cc+e;
-            POKE(by, PEEK(by++) | v);
-            POKE(by, PEEK(by++) | v);
-            POKE(by, PEEK(by++) | v);
-            POKE(by, PEEK(by++) | v);
-            POKE(by, PEEK(by++) | v);
-            POKE(by, PEEK(by++) | v);
-            POKE(by, PEEK(by++) | v);
-            POKE(by, PEEK(by++) | v);
-            y1+=7; // because the for statement will add 1.
-            continue;
-        }
-        d=y1&0xFFF8;
-        e=d*40;
-        by=cc+e+((unsigned char)y1&7);
-        POKE(by, PEEK(by) | v);
-    }
+    port_vert_line(x1, y1, y2);
 }
 
 void diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
     short incx, short incy)
 {
-    static unsigned int d;
-    static unsigned int e;
-    static unsigned int by;
-    static int i;
-    for(i=0;i<=ix;++i){
-        d=y1&0xFFF8;
-        e=d*40;
-        by=BASE+e+(x1&0xFFF8)+((unsigned char)y1&7);
-        POKE(by, PEEK(by) | pix_pos[(unsigned char)x1&7]);
-        if(incx>0)
-            ++x1;
-        else
-            --x1;
-        if(incy>0)
-            ++y1;
-        else
-            --y1;
-    }
+    port_diag_line(x1, y1, ix, incx, incy);
 }
 
 void hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
 {
-    static unsigned int d;
-    static unsigned int e;
-    static unsigned int by;
-    d=y1&0xFFF8;
-    e=d*40;
-    by=BASE+e+((unsigned char)y1&7);
-    for(;x1<=x2;++x1){
-        if((x1&7)==0 && (x1+7)<=x2) {
-            POKE(by+(x1&0xFFF8),0xFF);
-            x1+=7; // because the for statement will add 1.
-            continue;
-        }
-        POKE(by+(x1&0xFFF8), PEEK(by+(x1&0xFFF8)) |
-            pix_pos[(unsigned char)x1&7]);
-    }
+    port_hor_line(x1, x2, y1);
 }
 
-/* Plot a line using the Bresenham algorithm
-   from Nelson Johnson, "Advanced Graphics in C"
-   ed. Osborne, McGraw-Hill.
-   Horizontal and vertical lines need to be considerably
-   speeded up by using a direct access to video RAM.
-*/
 void line(unsigned short x1, unsigned short y1,
         unsigned short x2, unsigned short y2)
 {
-    static short incx;
-    static short incy;
-
-    static unsigned short ix;
-    static unsigned short iy;
-    static unsigned short inc;
-
-    static unsigned char changey;
-    static short x, y;
-    static unsigned char plot;
-
-    static unsigned int d;
-    static unsigned int e;
-    static unsigned int by;
-    static unsigned int ypos;
-    static unsigned int i;
-    static unsigned char style_mask;
-
-    incx=x2>x1?1:-1;
-    incy=y2>y1?1:-1;
-
-    ix=incx>0?x2-x1:x1-x2;
-    iy=incy>0?y2-y1:y1-y2;
-
-    // If continuous lines have to be drawn, check if we can employ simplified
-    // and faster code in certain particular cases.
-    if(style==0x1) {
-        if(ix==0) {
-            if(incy>0)
-                vert_line(x1, y1,y2);
-            else
-                vert_line(x1, y2,y1);
-            return;
-        }
-        if(iy==0) {
-            if(incx>0)
-                hor_line(x1,x2,y1);
-            else
-                hor_line(x2,x1,y1);
-            return;
-        }
-        if(ix==iy) {
-            diag_line(x1,y1,ix,incx,incy);
-            return;
-        }
-    }
-
-    inc=a_max(ix, iy);
-    style_mask=style;
-
-    changey=TRUE;
-    x=0;
-    y=0;
-    plot=FALSE;
-
-    d=y1&0xFFF8;
-    e=d*40;
-    by=BASE+e+(x1&0xFFF8)+((unsigned char)y1&7);
-
-    /* Plot the first pixel */
-    POKE(by, PEEK(by) | pix_pos[(unsigned char)x1&7]);
-
-    /* Faster version with continuous line */
-    for(i=0; i<=inc; ++i) {
-        x += ix;
-        y += iy;
-        if (x>inc) {
-            plot=TRUE;
-            x-=inc;
-            x1 +=incx;
-        }
-        if (y>inc) {
-            plot=TRUE;
-            y-=inc;
-            y1 +=incy;
-            changey=TRUE;
-        }
-        if (plot && (style_mask&0x0001u)) {
-            plot=FALSE;
-            if(changey==TRUE) {
-                /* Calculations for the position of the memory location to
-                   modify are more complicated in y than in x, so it is
-                   worth doing them only when necessary. That greatly
-                   improves speed for almost horisontal lines. */
-                changey=FALSE;
-                d=y1&0xFFF8;
-                e=d*40;
-                ypos=BASE+e+((unsigned char)y1&0x07);
-            }
-            by=ypos+(x1&0xFFF8);
-            POKE(by, PEEK(by) | pix_pos[(unsigned char)x1&0x07]);
-        }
-        style_mask >>= 1;
-        if(style_mask==0) style_mask=style;
-    }
+    port_line(x1, y1, x2, y2);
 }
-
 
 /* box draws a box given the coordinates of the two
    diagonal corners. From Nelson Johnson, "Advanced
@@ -467,27 +123,20 @@ void box(unsigned short x1, unsigned short y1, unsigned short x2,
     }
 }
 
-void loadVICFont(unsigned char magnification)
+char getch(void)
 {
-    unsigned int i;
-    /* Load the font tables */
-    for(i=0; i<256; ++i)
-        f.pos[i]=0;
-
-    for(i=' '; i<='~'; ++i)
-        f.pos[i]=(i-' '+1)*8;
-
-    f.pDesc=vic_font;
-    f.incX=8;    /* Increment in X (-1 would mean a proportional font) */
-    f.incY=8;    /* Increment in Y */
-    f.magnification=magnification;
+    return port_getch();
 }
 
+unsigned long get_time(void)
+{
+    return port_get_time();
+}
 /** Choose randomly the starting position in the maze.
 */
 void choose_start_position()
 {
-    unsigned int time=PEEK(160)+PEEK(161)*256;
+    unsigned int time=get_time();
     srand(time);
     do {
         startx=(labyrinthSizeX*(rand()/(RAND_MAX/100)))/100;
@@ -725,14 +374,7 @@ void move_backwards()
 */
 void colour_banner(void)
 {
-    unsigned char x;
-    unsigned char y;
-
-    for(x=25;x<40;++x) {
-        for(y=0;y<25;++y) {
-            POKE(COLOR_MEM+x+y*40,0x67);
-        }
-    }
+    port_colour_banner();
 }
 
 /** Draw the banner on the right side of the screen.
@@ -740,9 +382,9 @@ void colour_banner(void)
 void draw_banner()
 {
     colour_banner();
-    loadVICFont(2);
+    port_loadVICFont(2);
     printat(204,17,"c64maze");
-    loadVICFont(1);
+    port_loadVICFont(1);
     box(251,53,278,84);
     printat(260,55,"t");
     printat(252,65,"f+g");
@@ -751,7 +393,8 @@ void draw_banner()
     printat(207,110,"[m] music 1/0");
     printat(207,120,"[a] restart  ");
     printat(207,170,"d. bucci 2017");
-    loadVICFont(2);
+    printat(207,160,"igor1101 2019");
+    port_loadVICFont(2);
     line(200,0,200,199);
 }
 
@@ -759,12 +402,7 @@ long start_time;
 
 long get_current_time(void)
 {
-    long ctime=((char)PEEK(160));
-    ctime<<=8;
-    ctime+=((char)PEEK(161));
-    ctime<<=8;
-    ctime+=((char)PEEK(162));
-    return ctime;
+    return port_get_current_time();
 }
 
 char *write_time(char *message, unsigned char start)
@@ -814,13 +452,15 @@ void show_maze()
 
     start_time-=60l*30l; // 30 seconds penalty.
 
-    clearHGRpage();
+    port_clearHGRpage();
     for(y=0; y<labyrinthSizeY;++y) {
-        by=COLOR_MEM+y*40;
+        //by=COLOR_MEM+y*40;
         pt=labyrinth+y*labyrinthSizeX;
         for(x=0; x<labyrinthSizeX;++x) {
             if(pt[x]=='*') {
-                POKE(by,9);
+                //POKE(by,9);
+#define SZ      (8)
+                box(x*SZ,y*SZ, x*SZ+SZ, y*SZ+SZ);
             } else if(positiony==y && positionx==x) {
                 box(x*8+2,y*8+2,x*8+5,y*8+5);
                 switch(orientation) {
@@ -845,31 +485,16 @@ void show_maze()
             ++by;
         }
     }
-    f.magnification=1;
+    //f.magnification=1;
     printat(15,150,"https://github.com/darwinne/c64maze");
-    f.magnification=2;
+    //f.magnification=2;
     write_time(message,9);
     printat(40,170,message);
-    cgetc();
-    clearHGRpage();
+    fflushMazeRegion();
+    getch();
+    port_clearHGRpage();
     draw_banner();
 }
-
-#define STACK_SIZE 256
-unsigned char stackSize[STACK_SIZE];
-
-unsigned int cnt;
-unsigned char *list1;
-unsigned char *ptr1;
-unsigned char wsh1;
-
-unsigned char *list2;
-unsigned char *ptr2;
-unsigned char wsh2;
-
-unsigned char *list3;
-unsigned char *ptr3;
-unsigned char wsh3;
 
 // byte 1: lo byte timestamp in 1/60's of second
 // byte 2: hi byte timestamp in 1/60's of second
@@ -878,73 +503,15 @@ unsigned char wsh3;
 // byte 5: second byte of the message (if applicable)
 //
 
-void process_voice(unsigned char **ptr, unsigned char *sid_pointer,
-    unsigned char *wsh)
-{
-    unsigned int timestamp=**ptr+ (*(*ptr+1)<<8);
-    if(timestamp>cnt) {
-        return;
-    }
-    ++*ptr;
-    ++*ptr;
-    switch(**ptr) {
-        case NOTE_CODE:                 // Note event
-            POKE(sid_pointer,*(++*ptr));        // Frequency lo
-            POKE(sid_pointer+1,*(++*ptr));      // Frequency hi
-            POKE(sid_pointer+4,0);
-            POKE(sid_pointer+4,*wsh);          // Note on
-            ++*ptr;
-            break;
-        case PAUSE_CODE:                // Pause event
-            POKE(sid_pointer+4,0);             // Note off
-            ++*ptr;
-            break;
-        case ENVELOPE_CODE:             // Change envelope
-            *wsh=*(++*ptr);             // Wave shape
-            POKE(sid_pointer+2,*(++*ptr));     // Duty cycle lo
-            POKE(sid_pointer+3,*(++*ptr));     // Dyty cycle hi
-            POKE(sid_pointer+5,*(++*ptr));     // AD
-            POKE(sid_pointer+6,*(++*ptr));     // SR
-            ++*ptr;
-            break;
-        case REWIND_CODE:
-            ptr1=list1;
-            ptr2=list2;
-            ptr3=list3;
-            cnt=0;
-            break;
-    }
-}
 
 unsigned char sound_irq(void)
 {
-    if(ptr1!=NULL) {
-        process_voice(&ptr1, (unsigned char*)0xD400U, &wsh1);
-    }
-    if(ptr2!=NULL) {
-        process_voice(&ptr2, (unsigned char*)0xD407U, &wsh2);
-    }
-    if(ptr3!=NULL) {
-        process_voice(&ptr3, (unsigned char*)0xD40EU, &wsh3);
-    }
-    ++cnt;
-    return (IRQ_NOT_HANDLED);
+    return port_sound_irq();
 }
-
-
 void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
 {
-    POKE(0xD418,15);
-    ptr1=list1=l1;
-    ptr2=list2=l2;
-    ptr3=list3=l3;
-    cnt=0;
-
-    SEI();
-    set_irq(&sound_irq, stackSize, STACK_SIZE);
-    CLI();
+    port_start_sound(l1, l2, l3);
 }
-
 void start_game(void)
 {
     start_time=get_current_time();
@@ -966,7 +533,7 @@ void main(void)
 
     start_sound(music_v1, music_v2, music_v3);
 
-    graphics_monochrome();
+    graphics_init();
     restart:
     start_game();
 
@@ -977,26 +544,31 @@ void main(void)
             oldo=orientation;
             clearMazeRegion();
             drawLabyrinthView();
+            fflushMazeRegion();
             if (positionx==startx && positiony==starty)
                 printat(40,100,"step in!");
             if (positionx==exitx && positiony==exity) {
                 printat(40,70,"way out!");
                 write_time(time_spent,0);
                 printat(50,100,time_spent);
-                loadVICFont(1);
+                port_loadVICFont(1);
                 printat(55, 140,  "press a key");
                 printat(47, 150, "to play again");
-                cgetc();
+                getch();
                 oldx=0;
                 goto restart;   // No program for the C64 would be complete
                                 // without at least a GOTO statement somewhere.
             }
-            POKE(SCREEN_BORDER,4);
+            //POKE(SCREEN_BORDER,4);
         }
         do {
-            c=cgetc();
+            c=getch();
             iv=FALSE;
             switch(c) {
+#if PLATFORM_MAZE == UNIX
+                case 'q':   //Exit
+                    exit(0);
+#endif
                 case 't':   // Forward
                     move_forward();
                     break;
@@ -1021,16 +593,16 @@ void main(void)
                     oldx=0;
                     break;
                 case 'a':   // Start again
-                    clearHGRpage();
+                    port_clearHGRpage();
                     start_game();
                     oldx=0;
                     break;
                 case 'm':   // Toggle music on/off
                     if(music==TRUE) {
-                        POKE(0xD418,0);
+                        //POKE(0xD418,0);
                         music=FALSE;
                     } else {
-                        POKE(0xD418,15);
+                        //POKE(0xD418,15);
                         music=TRUE;
                     }
                     break;
@@ -1039,7 +611,7 @@ void main(void)
             };
         } while(iv==TRUE);
         if(labyrinth[positionx+positiony*labyrinthSizeX]=='*') {
-            POKE(SCREEN_BORDER,1);
+            //POKE(SCREEN_BORDER,1);
             positionx=oldx;
             positiony=oldy;
         }
