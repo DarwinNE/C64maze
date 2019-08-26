@@ -169,7 +169,7 @@ void port_clearMazeRegion(void)
 
 /** Switch on the HGR monochrome graphic mode.
 */
-void port_graphics_monochrome(void)
+void port_graphics_init(void)
 {
     POKE (56576U, 0x01);
     POKE (53272U, 0x38);
@@ -516,6 +516,12 @@ void port_loadVICFont(unsigned char magnification)
     f.magnification=magnification;
 }
 
+char port_getch(void)
+{
+    return cgetc();
+}
 
+void port_fflushMazeRegion(void)
+{
 
-
+}

@@ -8,10 +8,22 @@
 #define TRUE  0xFF
 #define FALSE 0x00
 
+#if PLATFORM == C64
 #define SIZEX 200
 #define SIZEY 199
-#define STEPSIZEX  15
-#define STEPSIZEY  15
+#define STEPSIZEX 15
+#define STEPSIZEY 15
+#elif PLATFORM == UNIX
+#define SIZEX 1024
+#define SIZEY 768
+#define STEPSIZEX 70
+#define STEPSIZEY 70
+#elif PLATFORM == STM_128x64
+#define SIZEX 128
+#define SIZEY 64
+#define STEPSIZEX  5
+#define STEPSIZEY  5
+#endif
 
 
 #define labyrinthSizeX 40

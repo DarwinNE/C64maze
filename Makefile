@@ -1,27 +1,34 @@
 PLATFORM?=C64
 TARGET=c64maze
-all: options $(TARGET)
+all: $(TARGET)
 
-options:
-	#include files
-CFLAGS += -I ./ 
+CFLAGS += -I ./ -g
 ifeq ($(PLATFORM),C64)
+	#commodore 64 platform
 CC=cc65
 AS=ca65
 LD=ld65
 CFLAGS += -DPLATFORM_MAZE=C64
-else
-	CC=gcc
+endif
+ifeq ($(PLATFORM),UNIX)
+	#unix platform
+CC=gcc
+AS=as
+LD=ld
+CFLAGS += -DPLATFORM_MAZE=UNIX
 endif
 
 
-$(TARGET): options
+$(TARGET): $(TARGET).c ports/$(PLATFORM).c
 ifeq ($(PLATFORM),C64) 
 	$(CC) $(CFLAGS) -Oi -T -t c64 $(TARGET).c 
-	$(AS) c64maze.s
+	$(AS) $(TARGET).s
 	$(CC) $(CFLAGS) -Oi -T -t c64 ports/$(PLATFORM).c 
 	$(AS) ports/$(PLATFORM).s
 	$(LD) -o $(TARGET) -t c64 $(TARGET).o ports/$(PLATFORM).o c64.lib
+endif
+ifeq ($(PLATFORM),UNIX)
+	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c ports/$(PLATFORM).c -lSDL2
 endif
 
 clean:

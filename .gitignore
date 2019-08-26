@@ -3,3 +3,6 @@ C64.s
 c64maze
 c64maze.o
 *.o
+.cproject
+.project
+.settings

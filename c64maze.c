@@ -60,9 +60,14 @@ void clearMazeRegion(void)
     port_clearMazeRegion();
 }
 
-void graphics_monochrome(void)
+void fflushMazeRegion(void)
 {
-    port_graphics_monochrome();
+    port_fflushMazeRegion();
+}
+
+void graphics_init(void)
+{
+    port_graphics_init();
 }
 
 void vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
@@ -116,6 +121,11 @@ void box(unsigned short x1, unsigned short y1, unsigned short x2,
         line(xlr, ylr, xul, ylr);
         line(xul, ylr, xul, yul);
     }
+}
+
+char getch(void)
+{
+    return port_getch();
 }
 
 unsigned long get_time(void)
@@ -383,6 +393,7 @@ void draw_banner()
     printat(207,110,"[m] music 1/0");
     printat(207,120,"[a] restart  ");
     printat(207,170,"d. bucci 2017");
+    printat(207,160,"igor1101 2019");
     port_loadVICFont(2);
     line(200,0,200,199);
 }
@@ -479,7 +490,8 @@ void show_maze()
     //f.magnification=2;
     write_time(message,9);
     printat(40,170,message);
-    cgetc();
+    fflushMazeRegion();
+    getch();
     port_clearHGRpage();
     draw_banner();
 }
@@ -521,7 +533,7 @@ void main(void)
 
     start_sound(music_v1, music_v2, music_v3);
 
-    graphics_monochrome();
+    graphics_init();
     restart:
     start_game();
 
@@ -532,6 +544,7 @@ void main(void)
             oldo=orientation;
             clearMazeRegion();
             drawLabyrinthView();
+            fflushMazeRegion();
             if (positionx==startx && positiony==starty)
                 printat(40,100,"step in!");
             if (positionx==exitx && positiony==exity) {
@@ -541,7 +554,7 @@ void main(void)
                 port_loadVICFont(1);
                 printat(55, 140,  "press a key");
                 printat(47, 150, "to play again");
-                cgetc();
+                getch();
                 oldx=0;
                 goto restart;   // No program for the C64 would be complete
                                 // without at least a GOTO statement somewhere.
@@ -549,9 +562,13 @@ void main(void)
             //POKE(SCREEN_BORDER,4);
         }
         do {
-            c=cgetc();
+            c=getch();
             iv=FALSE;
             switch(c) {
+#if PLATFORM_MAZE == UNIX
+                case 'q':   //Exit
+                    exit(0);
+#endif
                 case 't':   // Forward
                     move_forward();
                     break;
