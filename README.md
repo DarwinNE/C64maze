@@ -1,5 +1,7 @@
 # C64maze
-A 3D maze game written in C.
+## A 3D maze game written in C
+
+### Intro
 
 This project (distributed with the GPLv.3 license) is a very simple 3D maze originally written for
 the Commodore 64 computer, hence the name, and then ported to UNIX. The source code is written in C (with some inline
@@ -25,4 +27,16 @@ Here is a screenshot of the game running on a Unix machine:
 
 ![UNIX PORT 1st version](./screenshots/unix_first.jpg "you must see it")
 
+### Music
 The music is a 3-part reduction for the SID of J.S. Bach's "little" fugue in G minor, BWV578. Hommage to Wendy Carlos. The music driver is fully interrupt-driven and it is also written in C.
+
+### How to build the game
+To build the game for UNIX\GNU linux install SDL2 library and type:
+~~~~
+make PLATFORM=UNIX
+~~~~
+
+To build for the Commodore 64, make sure you have CC65 installed and type:
+~~~~
+make PLATFORM=C64
+~~~~
