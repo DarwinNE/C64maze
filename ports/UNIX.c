@@ -84,7 +84,7 @@ void port_graphics_init(void)
     win = SDL_CreateWindow("C64MAZE", 2, 2, 
         SIZEX, 
         SIZEY,
-        SDL_WINDOW_SHOWN|SDL_WINDOW_FULLSCREEN);
+        SDL_WINDOW_SHOWN);
     if(win == NULL) {
         puts("error when creating window");
         puts(SDL_GetError());
