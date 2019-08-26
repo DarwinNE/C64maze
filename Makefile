@@ -3,10 +3,13 @@ TARGET=c64maze
 all: options $(TARGET)
 
 options:
+	#include files
+CFLAGS += -I ./ 
 ifeq ($(PLATFORM),C64)
 CC=cc65
 AS=ca65
 LD=ld65
+CFLAGS += -DPLATFORM_MAZE=C64
 else
 	CC=gcc
 endif
@@ -14,9 +17,11 @@ endif
 
 $(TARGET): options
 ifeq ($(PLATFORM),C64) 
-	$(CC) -Oi -T -t c64 $(TARGET).c 
+	$(CC) $(CFLAGS) -Oi -T -t c64 $(TARGET).c 
 	$(AS) c64maze.s
-	$(LD) -o $(TARGET) -t c64 $(TARGET).o c64.lib
+	$(CC) $(CFLAGS) -Oi -T -t c64 ports/$(PLATFORM).c 
+	$(AS) ports/$(PLATFORM).s
+	$(LD) -o $(TARGET) -t c64 $(TARGET).o ports/$(PLATFORM).o c64.lib
 endif
 
 clean:
