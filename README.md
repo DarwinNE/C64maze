@@ -1,9 +1,13 @@
 # C64maze
-A 3D maze game written in C for the Commodore 64.
+## A 3D maze game written in C
 
-This project (distributed with the GPLv.3 license) is a very simple 3D maze for
-the Commodore 64 computer. The source code is written in C (with some inline
-assembly) and it is meant to be compiled with the cc65 compiler. The game started as an exercise in high resolution graphics on the C64 and was inspired to those old 3D maze games in BASIC which were popular at the time. However, the C language is much faster than BASIC and one can do some pretty nice things. Some routines are tweaked in assembly for better performances.
+### Intro
+
+This project (distributed with the GPLv.3 license) is a very simple 3D maze originally written for
+the Commodore 64 computer, hence the name, and then ported to UNIX. The source code is written in C (with some inline
+assembly for the C64 version) and it is meant to be compiled with the cc65 compiler or gcc with the SDL2 library.
+
+The game started as an exercise in high resolution graphics on the C64 and was inspired to those old 3D maze games in BASIC that were popular at the time. However, the C language is much faster than BASIC and one can do some pretty nice things. Some routines are tweaked in assembly for better performances.
 
 ![Do you dare to enter The Maze?](https://github.com/DarwinNE/C64maze/raw/master/screenshots/step_in.png)
 
@@ -19,7 +23,20 @@ And once you find your way through it, you will know how much time you needed:
 
 ![Game completed.](https://github.com/DarwinNE/C64maze/raw/master/screenshots/exit_s.png)
 
+Here is a screenshot of the game running on a Unix machine:
+
 ![UNIX PORT 1st version](./screenshots/unix_first.jpg "you must see it")
+
+### Music
 The music is a 3-part reduction for the SID of J.S. Bach's "little" fugue in G minor, BWV578. Hommage to Wendy Carlos. The music driver is fully interrupt-driven and it is also written in C.
 
-Author: D. Bucci
+### How to build the game
+To build the game for UNIX\GNU linux install SDL2 library and type:
+~~~~
+make PLATFORM=UNIX
+~~~~
+
+To build for the Commodore 64, make sure you have CC65 installed and type:
+~~~~
+make PLATFORM=C64
+~~~~
