@@ -35,3 +35,4 @@ clean:
 	-rm `find ./ -name *.o`
 	-rm $(TARGET)
 	-rm $(TARGET).s
+	-rm ports/$(PLATFORM).s
