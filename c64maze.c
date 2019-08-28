@@ -485,9 +485,9 @@ void show_maze()
             ++by;
         }
     }
-    //f.magnification=1;
+    port_font_magnification(1);
     printat(15,150,"https://github.com/darwinne/c64maze");
-    //f.magnification=2;
+    port_font_magnification(2);
     write_time(message,9);
     printat(40,170,message);
     fflushMazeRegion();
@@ -599,10 +599,10 @@ void main(void)
                     break;
                 case 'm':   // Toggle music on/off
                     if(music==TRUE) {
-                        //POKE(0xD418,0);
+                        port_music_off();
                         music=FALSE;
                     } else {
-                        //POKE(0xD418,15);
+                        port_music_on();
                         music=TRUE;
                     }
                     break;
