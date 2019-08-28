@@ -76,7 +76,7 @@ void port_clearMazeRegion(void)
 
 /** Switch on the HGR monochrome graphic mode.
 */
-void port_graphics_init(void)
+int port_graphics_init(void)
 {
     if(SDL_Init( SDL_INIT_EVERYTHING ) == -1 ) {
         return -1;
@@ -97,6 +97,7 @@ void port_graphics_init(void)
         puts(SDL_GetError());
         return -1;
     }
+    return 0;
 }
 
 void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
@@ -145,7 +146,7 @@ void port_colour_banner(void)
 
     for(x=25;x<40;++x) {
         for(y=0;y<25;++y) {
-            pset(x, y);
+            port_pset(x, y);
         }
     }
 }
