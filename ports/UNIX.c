@@ -199,3 +199,9 @@ void port_fflushMazeRegion(void)
     SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderPresent(ren);
 }
+void port_music_on(void){}
+void port_music_off(void){}
+void port_font_magnification(unsigned char magnification)
+{
+    (void)magnification;
+}
