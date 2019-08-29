@@ -34,7 +34,19 @@ char positionx;
 char positiony;
 unsigned char style=0x1;
 
+#if (P_CURRENT== P_C64)
+#define SIZEX_DYN	SIZEX
+#define SIZEY_DYN	SIZEY
+#define STEPSIZEX_DYN	STEPSIZEX
+#define STEPSIZEY_DYN	STEPSIZEY
+#else
 display_bounds_t disp_bounds;
+#define SIZEX_DYN	disp_bounds.szx
+#define SIZEY_DYN	disp_bounds.szy
+#define STEPSIZEX_DYN	disp_bounds.stepszx
+#define STEPSIZEY_DYN 	disp_bounds.stepszy
+#endif
+
 
 char exitx=13;
 char exity=1;
@@ -239,53 +251,53 @@ void drawLabyrinthView()
             break;
         }
         // Some pre-calculated data for wall and corner drawing.
-        sszx=step*disp_bounds.stepszx;
-        sszy=step*disp_bounds.stepszy;
-        sszxp1=(step+1)*disp_bounds.stepszx;
-        sszyp1=(step+1)*disp_bounds.stepszy;
+        sszx=step*STEPSIZEX_DYN;
+        sszy=step*STEPSIZEY_DYN;
+        sszxp1=(step+1)*STEPSIZEX_DYN;
+        sszyp1=(step+1)*STEPSIZEY_DYN;
         // Wall on the right?
         if(labyrinth[posx+rightx+(posy+righty)*labyrinthSizeX]=='*') {
-            line(disp_bounds.szx-sszx,sszy,
-                 disp_bounds.szx-sszxp1,sszyp1);
-            line(disp_bounds.szx-sszx,disp_bounds.szy-sszy,
-                 disp_bounds.szx-sszxp1,disp_bounds.szy-sszyp1);
+            line(SIZEX_DYN-sszx,sszy,
+                 SIZEX_DYN-sszxp1,sszyp1);
+            line(SIZEX_DYN-sszx,SIZEY_DYN-sszy,
+                 SIZEX_DYN-sszxp1,SIZEY_DYN-sszyp1);
         } else {
             // Closer vertical line
-            line(disp_bounds.szx-sszx,sszy,
-                 disp_bounds.szx-sszx,disp_bounds.szy-sszy);
+            line(SIZEX_DYN-sszx,sszy,
+                 SIZEX_DYN-sszx,SIZEY_DYN-sszy);
             // Farther vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
-                line(disp_bounds.szx-sszxp1,sszyp1,
-                    disp_bounds.szx-sszxp1,disp_bounds.szy-sszyp1);
+                line(SIZEX_DYN-sszxp1,sszyp1,
+                    SIZEX_DYN-sszxp1,SIZEY_DYN-sszyp1);
             }
             // Upper horisontal line
-            line(disp_bounds.szx-sszxp1,sszyp1,
-                 disp_bounds.szx-sszx,sszyp1);
+            line(SIZEX_DYN-sszxp1,sszyp1,
+                 SIZEX_DYN-sszx,sszyp1);
             // Lower horisontal line
-            line(disp_bounds.szx-sszxp1,disp_bounds.szy-sszyp1,
-                 disp_bounds.szx-sszx,disp_bounds.szy-sszyp1);
+            line(SIZEX_DYN-sszxp1,SIZEY_DYN-sszyp1,
+                 SIZEX_DYN-sszx,SIZEY_DYN-sszyp1);
         }
         // Wall on the left?
         if(labyrinth[posx+leftx+(posy+lefty)*labyrinthSizeX]=='*') {
             line(sszx,sszy,
                  sszxp1,sszyp1);
-            line(sszx,disp_bounds.szy-sszy,
-                 sszxp1,disp_bounds.szy-sszyp1);
+            line(sszx,SIZEY_DYN-sszy,
+                 sszxp1,SIZEY_DYN-sszyp1);
         } else {
             // Closer vertical line
             line(sszx,sszy,
-                 sszx,disp_bounds.szy-sszy);
+                 sszx,SIZEY_DYN-sszy);
             // Farter vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
                 line(sszxp1,sszyp1,
-                 sszxp1,disp_bounds.szy-sszyp1);
+                 sszxp1,SIZEY_DYN-sszyp1);
             }
             // Upper horisontal line
             line(sszxp1,sszyp1,
                  sszx,sszyp1);
             // Lower horisontal line
-            line(sszxp1,disp_bounds.szy-sszyp1,
-                 sszx,disp_bounds.szy-sszyp1);
+            line(sszxp1,SIZEY_DYN-sszyp1,
+                 sszx,SIZEY_DYN-sszyp1);
         }
         // Advance one step farther from the player.
         posx+=advancex;
@@ -302,17 +314,17 @@ void drawLabyrinthView()
     }
     // We have a wall at the end of our sight
     if(wall==TRUE)
-        box(step*disp_bounds.stepszx,step*disp_bounds.stepszy,
-            disp_bounds.szx-step*disp_bounds.stepszx,disp_bounds.szy-step*disp_bounds.stepszy);
+        box(step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
+            SIZEX_DYN-step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
     // The exit is in sight!
     if(wayout) {
         ++step;
-        box(step*disp_bounds.stepszx,step*disp_bounds.stepszy,
-            disp_bounds.szx-step*disp_bounds.stepszx,disp_bounds.szy-step*disp_bounds.stepszy);
-        line(step*disp_bounds.stepszx,step*disp_bounds.stepszy,
-            disp_bounds.szx-step*disp_bounds.stepszx,disp_bounds.szy-step*disp_bounds.stepszy);
-        line(disp_bounds.szx-step*disp_bounds.stepszx,step*disp_bounds.stepszy,
-            step*disp_bounds.stepszx,disp_bounds.szy-step*disp_bounds.stepszy);
+        box(step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
+            SIZEX_DYN-step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
+        line(step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
+            SIZEX_DYN-step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
+        line(SIZEX_DYN-step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
+            step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
     }
 }
 
@@ -446,7 +458,7 @@ void show_maze()
     unsigned char x;
     unsigned char y;
     unsigned int by;
-    char *pt;
+    const char *pt;
 
     char message[]="elapsed:      s";
 
@@ -567,10 +579,9 @@ void main(void)
             c=getch();
             iv=FALSE;
             switch(c) {
-#if PLATFORM_MAZE == UNIX
                 case 'q':   //Exit
                 	game_exit();
-#endif
+                	break;
                 case 't':   // Forward
                     move_forward();
                     break;
