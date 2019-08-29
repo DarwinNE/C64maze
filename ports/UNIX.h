@@ -28,5 +28,6 @@ char port_getch(void);
 void port_music_on(void);
 void port_music_off(void);
 void port_font_magnification(unsigned char magnification);
+void port_exit(void);
 
 #endif /* UNIX*/

@@ -569,7 +569,7 @@ void main(void)
             switch(c) {
 #if PLATFORM_MAZE == UNIX
                 case 'q':   //Exit
-                    exit(0);
+                	game_exit();
 #endif
                 case 't':   // Forward
                     move_forward();
@@ -618,4 +618,9 @@ void main(void)
             positiony=oldy;
         }
     }
+}
+
+void game_exit(void)
+{
+	port_exit();
 }

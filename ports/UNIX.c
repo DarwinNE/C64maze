@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_ttf.h>
 #include"vic_font.h"
 #include"sid_tune.h"
 #include"UNIX.h"
@@ -81,6 +82,7 @@ int port_graphics_init(void)
     if(SDL_Init( SDL_INIT_EVERYTHING ) == -1 ) {
         return -1;
     }
+    TTF_Init();
     win = SDL_CreateWindow("C64MAZE", 2, 2, 
         SIZEX, 
         SIZEY,
@@ -220,4 +222,12 @@ void port_music_off(void){}
 void port_font_magnification(unsigned char magnification)
 {
     (void)magnification;
+}
+void port_exit(void)
+{
+	SDL_DestroyRenderer(ren);
+	SDL_DestroyWindow(win);
+	TTF_Quit();
+	SDL_Quit();
+	exit(0);
 }

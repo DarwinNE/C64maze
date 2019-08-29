@@ -39,4 +39,8 @@ typedef struct {
 } display_bounds_t;
 extern display_bounds_t disp_bounds;
 
+
+/* global procedures */
+void game_exit(void);
+
 #endif /* C64MAZE_H */
