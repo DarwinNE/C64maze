@@ -84,7 +84,7 @@ int port_graphics_init(void)
     win = SDL_CreateWindow("C64MAZE", 2, 2, 
         SIZEX, 
         SIZEY,
-        SDL_WINDOW_SHOWN);
+        SDL_WINDOW_SHOWN|SDL_WINDOW_FULLSCREEN_DESKTOP);
     if(win == NULL) {
         puts("error when creating window");
         puts(SDL_GetError());
@@ -96,6 +96,22 @@ int port_graphics_init(void)
         puts("error when creating renderer");
         puts(SDL_GetError());
         return -1;
+    }
+    SDL_Rect rect;
+    if (SDL_GetDisplayBounds(0, &rect) != 0) {
+        SDL_Log("SDL_GetDisplayBounds failed: %s", SDL_GetError());
+        return -1;
+    }
+    if(rect.w / SIZEX < rect.h / SIZEY) {
+        disp_bounds.szx = rect.w;
+        disp_bounds.szy = rect.w * SIZEY / SIZEX;
+        disp_bounds.stepszx = rect.w*STEPSIZEX/SIZEX;
+        disp_bounds.stepszy = rect.w*STEPSIZEY/SIZEX;
+    } else {
+        disp_bounds.szy = rect.h;
+        disp_bounds.szx = rect.h * SIZEX / SIZEY;
+        disp_bounds.stepszx = rect.h*STEPSIZEX/SIZEY;
+        disp_bounds.stepszy = rect.h*STEPSIZEY/SIZEY;
     }
     return 0;
 }

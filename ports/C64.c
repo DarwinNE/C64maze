@@ -175,6 +175,10 @@ void port_graphics_init(void)
     POKE (53272U, 0x38);
     POKE (53265U, 0x36);
     port_clearHGRpage();
+    disp_bounds.szx = SIZEX;
+    disp_bounds.szy = SIZEY;
+    disp_bounds.stepszx = STEPSIZEX;
+    disp_bounds.stepszy = STEPSIZEY;
 }
 
 void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2)

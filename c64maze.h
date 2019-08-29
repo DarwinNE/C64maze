@@ -14,10 +14,10 @@
 #define STEPSIZEX 15
 #define STEPSIZEY 15
 #elif PLATFORM == UNIX
-#define SIZEX 1024
-#define SIZEY 768
-#define STEPSIZEX 70
-#define STEPSIZEY 70
+#define SIZEX 128
+#define SIZEY 64
+#define STEPSIZEX 5
+#define STEPSIZEY 5
 #elif PLATFORM == STM_128x64
 #define SIZEX 128
 #define SIZEY 64
@@ -29,5 +29,14 @@
 #define labyrinthSizeX 40
 #define labyrinthSizeY 17
 extern unsigned char style;
+
+/* dynamic display bounds */
+typedef struct {
+    unsigned short szx;
+    unsigned short szy;
+    unsigned short stepszx;
+    unsigned short stepszy;
+} display_bounds_t;
+extern display_bounds_t disp_bounds;
 
 #endif /* C64MAZE_H */
