@@ -1,11 +1,13 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_ttf.h>
+#include "SDL_FontCache/SDL_FontCache.h"
 #include"vic_font.h"
 #include"sid_tune.h"
 #include"UNIX.h"
 #include <c64maze.h>
 #include <time.h>
+#include <stdbool.h>
 /* local definitions */
 #define VIC_II_START 53248U
 #define VIC_II_Y_SCROLL 53265U
@@ -51,6 +53,7 @@ struct font{
 };
 
 struct font f;
+FC_Font *fc;
 
 /* local funcs defs */
 static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
@@ -136,8 +139,18 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
 
 void port_printat(unsigned short x, unsigned short y, char *s)
 {
-    /* TODO, now printing to CMDLINE */
-    printf("%s\n\r", s);
+	static bool firsttime=true;
+	if(firsttime) {
+		SDL_Color c = { 255, 255, 255};
+		fc = FC_CreateFont();
+		FC_LoadFont(fc, ren,
+				"DejaVuSerif.ttf",
+				20, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
+		firsttime = false;
+	}
+	FC_Draw(fc, ren, x, y, s);
+	//SDL_Delay(100);
+	SDL_RenderPresent(ren);
 }
 
 /* Plot a line using the Bresenham algorithm

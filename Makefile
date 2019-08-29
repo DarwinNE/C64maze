@@ -28,7 +28,8 @@ ifeq ($(PLATFORM),C64)
 	$(LD) -o $(TARGET) -t c64 $(TARGET).o ports/$(PLATFORM).o c64.lib
 endif
 ifeq ($(PLATFORM),UNIX)
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c ports/$(PLATFORM).c -lSDL2 -lSDL2_ttf
+	$(CC) $(CFLAGS) -o SDL_FontCache.o -c ports/SDL_FontCache/SDL_FontCache.c
+	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c ports/$(PLATFORM).c SDL_FontCache.o -lSDL2 -lSDL2_ttf
 endif
 
 clean:
