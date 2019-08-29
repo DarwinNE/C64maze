@@ -543,3 +543,10 @@ void port_music_on(void)
 { 
     POKE(0xD418,15);
 }
+
+void port_exit(void)
+{
+	f.magnification = 1;
+	port_printat(0,60, "We cant exit on this port!");
+	f.magnification = 2;
+}
