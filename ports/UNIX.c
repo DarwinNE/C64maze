@@ -74,8 +74,13 @@ void port_clearHGRpage(void)
 void port_clearMazeRegion(void)
 {
     SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
-    SDL_RenderClear(ren);
-    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
+	SDL_Rect rect = {
+			.x = 0,
+			.y = 0,
+			.w = disp_bounds.labyrinthx,
+			.h = disp_bounds.labyrinthy
+	};
+	SDL_RenderFillRect(ren, &rect);
 }
 
 /** Switch on the HGR monochrome graphic mode.
@@ -110,30 +115,52 @@ int port_graphics_init(void)
     if(rect.w / SIZEX < rect.h / SIZEY) {
         disp_bounds.szx = rect.w;
         disp_bounds.szy = rect.w * SIZEY / SIZEX;
-        disp_bounds.stepszx = rect.w*STEPSIZEX/SIZEX;
-        disp_bounds.stepszy = rect.w*STEPSIZEY/SIZEX;
+        /* calculate labyrinth size */
+        disp_bounds.labyrinthx = rect.w * 2 / 3;
+        disp_bounds.labyrinthy = disp_bounds.labyrinthx / SIZEX * SIZEY;
     } else {
         disp_bounds.szy = rect.h;
         disp_bounds.szx = rect.h * SIZEX / SIZEY;
-        disp_bounds.stepszx = rect.h*STEPSIZEX/SIZEY;
-        disp_bounds.stepszy = rect.h*STEPSIZEY/SIZEY;
+        disp_bounds.labyrinthy = rect.h * 2 / 3;
+        disp_bounds.labyrinthx = disp_bounds.labyrinthy * SIZEY / SIZEX;
     }
+    disp_bounds.stepszx = disp_bounds.labyrinthx * STEPSIZEX / SIZEX;
+    disp_bounds.stepszy = disp_bounds.labyrinthx * STEPSIZEY / SIZEX;
+    /* set banner boundaries */
+    disp_bounds.bannerx = disp_bounds.labyrinthx + 1;
+    disp_bounds.bannerx_end = disp_bounds.szx;
+    disp_bounds.bannery = 1;
+    disp_bounds.bannery_end = disp_bounds.szy;
+    printf("display bounds: "
+    		"szx=%d, szy=%d,"
+    		"labyrinth=%dx%d"
+    		"step=%dx%d"
+    		"banner=%dx%d to %dx%d",
+			disp_bounds.szx,
+			disp_bounds.szy,
+			disp_bounds.labyrinthx, disp_bounds.labyrinthy,
+			disp_bounds.stepszx, disp_bounds.stepszy,
+			disp_bounds.bannerx, disp_bounds.bannery,
+			disp_bounds.bannerx_end, disp_bounds.bannery_end);
     return 0;
 }
 
 void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1,y1,x1,y2);
 }
 
 void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
     short incx, short incy)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1, y1, x1+incx, y1+incy);
 }
 
 void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1, y1, x2, y1);
 }
 
@@ -150,7 +177,7 @@ void port_printat(unsigned short x, unsigned short y, char *s)
 	}
 	FC_Draw(fc, ren, x, y, s);
 	//SDL_Delay(100);
-	SDL_RenderPresent(ren);
+	//SDL_RenderPresent(ren);
 }
 
 /* Plot a line using the Bresenham algorithm
@@ -162,6 +189,7 @@ void port_printat(unsigned short x, unsigned short y, char *s)
 void port_line(unsigned short x1, unsigned short y1,
         unsigned short x2, unsigned short y2)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1, y1, x2, y2);
 }
 
@@ -172,14 +200,15 @@ unsigned long port_get_time(void)
 
 void port_colour_banner(void)
 {
-    unsigned char x;
-    unsigned char y;
-
-    for(x=25;x<40;++x) {
-        for(y=0;y<25;++y) {
-            port_pset(x, y);
-        }
-    }
+	SDL_Rect rect = {
+			.x = disp_bounds.bannerx,
+			.y = disp_bounds.bannery,
+			.w = disp_bounds.bannerx_end - disp_bounds.bannerx,
+			.h = disp_bounds.bannery_end - disp_bounds.bannery
+	};
+	SDL_SetRenderDrawColor(ren, 210, 10, 10, 255);
+	SDL_RenderFillRect(ren, &rect);
+	SDL_RenderPresent(ren);
 }
 
 long port_get_current_time(void)

@@ -8,17 +8,12 @@
 #define TRUE  0xFF
 #define FALSE 0x00
 
-#if PLATFORM == C64
+#if (P_CURRENT == P_C64) || (P_CURRENT == P_UNIX)
 #define SIZEX 200
 #define SIZEY 199
 #define STEPSIZEX 15
 #define STEPSIZEY 15
-#elif PLATFORM == UNIX
-#define SIZEX 128
-#define SIZEY 64
-#define STEPSIZEX 5
-#define STEPSIZEY 5
-#elif PLATFORM == STM_128x64
+#elif P_CURRENT == P_STM_128x64
 #define SIZEX 128
 #define SIZEY 64
 #define STEPSIZEX  5
@@ -36,11 +31,18 @@ typedef struct {
     unsigned short szy;
     unsigned short stepszx;
     unsigned short stepszy;
+    unsigned short labyrinthx;
+    unsigned short labyrinthy;
+    unsigned short bannerx;
+    unsigned short bannery;
+    unsigned short bannerx_end;
+    unsigned short bannery_end;
 } display_bounds_t;
 extern display_bounds_t disp_bounds;
 
 
 /* global procedures */
 void game_exit(void);
+void draw_banner(void);
 
 #endif /* C64MAZE_H */

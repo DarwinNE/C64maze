@@ -35,16 +35,16 @@ char positiony;
 unsigned char style=0x1;
 
 #if (P_CURRENT== P_C64)
-#define SIZEX_DYN	SIZEX
-#define SIZEY_DYN	SIZEY
-#define STEPSIZEX_DYN	STEPSIZEX
-#define STEPSIZEY_DYN	STEPSIZEY
+#define LABYRINTHSZX_DYN	SIZEX
+#define LABYRINTHSZY_DYN	SIZEY
+#define LABSTEPSZX_DYN	STEPSIZEX
+#define LABSTEPSZY_DYN	STEPSIZEY
 #else
 display_bounds_t disp_bounds;
-#define SIZEX_DYN	disp_bounds.szx
-#define SIZEY_DYN	disp_bounds.szy
-#define STEPSIZEX_DYN	disp_bounds.stepszx
-#define STEPSIZEY_DYN 	disp_bounds.stepszy
+#define LABYRINTHSZX_DYN	disp_bounds.labyrinthx
+#define LABYRINTHSZY_DYN	disp_bounds.labyrinthy
+#define LABSTEPSZX_DYN	disp_bounds.stepszx
+#define LABSTEPSZY_DYN 	disp_bounds.stepszy
 #endif
 
 
@@ -251,53 +251,53 @@ void drawLabyrinthView()
             break;
         }
         // Some pre-calculated data for wall and corner drawing.
-        sszx=step*STEPSIZEX_DYN;
-        sszy=step*STEPSIZEY_DYN;
-        sszxp1=(step+1)*STEPSIZEX_DYN;
-        sszyp1=(step+1)*STEPSIZEY_DYN;
+        sszx=step*LABSTEPSZX_DYN;
+        sszy=step*LABSTEPSZY_DYN;
+        sszxp1=(step+1)*LABSTEPSZX_DYN;
+        sszyp1=(step+1)*LABSTEPSZY_DYN;
         // Wall on the right?
         if(labyrinth[posx+rightx+(posy+righty)*labyrinthSizeX]=='*') {
-            line(SIZEX_DYN-sszx,sszy,
-                 SIZEX_DYN-sszxp1,sszyp1);
-            line(SIZEX_DYN-sszx,SIZEY_DYN-sszy,
-                 SIZEX_DYN-sszxp1,SIZEY_DYN-sszyp1);
+            line(LABYRINTHSZX_DYN-sszx,sszy,
+                 LABYRINTHSZX_DYN-sszxp1,sszyp1);
+            line(LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszy,
+                 LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1);
         } else {
             // Closer vertical line
-            line(SIZEX_DYN-sszx,sszy,
-                 SIZEX_DYN-sszx,SIZEY_DYN-sszy);
+            line(LABYRINTHSZX_DYN-sszx,sszy,
+                 LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszy);
             // Farther vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
-                line(SIZEX_DYN-sszxp1,sszyp1,
-                    SIZEX_DYN-sszxp1,SIZEY_DYN-sszyp1);
+                line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
+                    LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1);
             }
             // Upper horisontal line
-            line(SIZEX_DYN-sszxp1,sszyp1,
-                 SIZEX_DYN-sszx,sszyp1);
+            line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
+                 LABYRINTHSZX_DYN-sszx,sszyp1);
             // Lower horisontal line
-            line(SIZEX_DYN-sszxp1,SIZEY_DYN-sszyp1,
-                 SIZEX_DYN-sszx,SIZEY_DYN-sszyp1);
+            line(LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1,
+                 LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszyp1);
         }
         // Wall on the left?
         if(labyrinth[posx+leftx+(posy+lefty)*labyrinthSizeX]=='*') {
             line(sszx,sszy,
                  sszxp1,sszyp1);
-            line(sszx,SIZEY_DYN-sszy,
-                 sszxp1,SIZEY_DYN-sszyp1);
+            line(sszx,LABYRINTHSZY_DYN-sszy,
+                 sszxp1,LABYRINTHSZY_DYN-sszyp1);
         } else {
             // Closer vertical line
             line(sszx,sszy,
-                 sszx,SIZEY_DYN-sszy);
+                 sszx,LABYRINTHSZY_DYN-sszy);
             // Farter vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
                 line(sszxp1,sszyp1,
-                 sszxp1,SIZEY_DYN-sszyp1);
+                 sszxp1,LABYRINTHSZY_DYN-sszyp1);
             }
             // Upper horisontal line
             line(sszxp1,sszyp1,
                  sszx,sszyp1);
             // Lower horisontal line
-            line(sszxp1,SIZEY_DYN-sszyp1,
-                 sszx,SIZEY_DYN-sszyp1);
+            line(sszxp1,LABYRINTHSZY_DYN-sszyp1,
+                 sszx,LABYRINTHSZY_DYN-sszyp1);
         }
         // Advance one step farther from the player.
         posx+=advancex;
@@ -314,17 +314,17 @@ void drawLabyrinthView()
     }
     // We have a wall at the end of our sight
     if(wall==TRUE)
-        box(step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
-            SIZEX_DYN-step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
+        box(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     // The exit is in sight!
     if(wayout) {
         ++step;
-        box(step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
-            SIZEX_DYN-step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
-        line(step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
-            SIZEX_DYN-step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
-        line(SIZEX_DYN-step*STEPSIZEX_DYN,step*STEPSIZEY_DYN,
-            step*STEPSIZEX_DYN,SIZEY_DYN-step*STEPSIZEY_DYN);
+        box(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
+        line(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
+        line(LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     }
 }
 
@@ -393,10 +393,11 @@ void colour_banner(void)
 
 /** Draw the banner on the right side of the screen.
 */
-void draw_banner()
+void draw_banner(void)
 {
     colour_banner();
     port_loadVICFont(2);
+#if P_CURRENT == P_C64
     printat(204,17,"c64maze");
     port_loadVICFont(1);
     box(251,53,278,84);
@@ -410,6 +411,21 @@ void draw_banner()
     printat(207,160,"igor1101 2019");
     port_loadVICFont(2);
     line(200,0,200,199);
+#else
+    printat(disp_bounds.bannerx,17,"c64maze");
+    port_loadVICFont(1);
+    box(251,53,278,84);
+    printat(260,55,"t");
+    printat(252,65,"f+g");
+    printat(260,75,"v");
+    printat(207,100,"[p] view maze");
+    printat(207,110,"[m] music 1/0");
+    printat(207,120,"[a] restart  ");
+    printat(207,170,"d. bucci 2017");
+    printat(207,160,"igor1101 2019");
+    port_loadVICFont(2);
+    line(200,0,200,199);
+#endif /* platform == C64 */
 }
 
 long start_time;
@@ -467,6 +483,7 @@ void show_maze()
     start_time-=60l*30l; // 30 seconds penalty.
 
     port_clearHGRpage();
+    /* findout appropriate box size */
     for(y=0; y<labyrinthSizeY;++y) {
         //by=COLOR_MEM+y*40;
         pt=labyrinth+y*labyrinthSizeX;
