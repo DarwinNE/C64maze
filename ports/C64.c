@@ -516,6 +516,11 @@ void port_loadVICFont(unsigned char magnification)
     f.magnification=magnification;
 }
 
+void port_font_magnification(unsigned char magnification)
+{
+    f.magnification = magnification;
+}
+
 char port_getch(void)
 {
     return cgetc();
@@ -524,4 +529,20 @@ char port_getch(void)
 void port_fflushMazeRegion(void)
 {
 
+}
+
+void port_music_off(void)
+{
+    POKE(0xD418,0);
+}
+void port_music_on(void)
+{ 
+    POKE(0xD418,15);
+}
+
+void port_exit(void)
+{
+	f.magnification = 1;
+	port_printat(0,60, "We cant exit on this port!");
+	f.magnification = 2;
 }

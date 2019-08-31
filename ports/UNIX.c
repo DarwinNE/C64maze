@@ -1,10 +1,13 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_ttf.h>
+#include "SDL_FontCache/SDL_FontCache.h"
 #include"vic_font.h"
 #include"sid_tune.h"
 #include"UNIX.h"
 #include <c64maze.h>
 #include <time.h>
+#include <stdbool.h>
 /* local definitions */
 #define VIC_II_START 53248U
 #define VIC_II_Y_SCROLL 53265U
@@ -50,6 +53,7 @@ struct font{
 };
 
 struct font f;
+FC_Font *fc;
 
 /* local funcs defs */
 static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
@@ -70,17 +74,23 @@ void port_clearHGRpage(void)
 void port_clearMazeRegion(void)
 {
     SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
-    SDL_RenderClear(ren);
-    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
+	SDL_Rect rect = {
+			.x = 0,
+			.y = 0,
+			.w = disp_bounds.labyrinthx,
+			.h = disp_bounds.labyrinthy
+	};
+	SDL_RenderFillRect(ren, &rect);
 }
 
 /** Switch on the HGR monochrome graphic mode.
 */
-void port_graphics_init(void)
+int port_graphics_init(void)
 {
     if(SDL_Init( SDL_INIT_EVERYTHING ) == -1 ) {
         return -1;
     }
+    TTF_Init();
     win = SDL_CreateWindow("C64MAZE", 2, 2, 
         SIZEX, 
         SIZEY,
@@ -97,28 +107,77 @@ void port_graphics_init(void)
         puts(SDL_GetError());
         return -1;
     }
+    SDL_Rect rect;
+    if (SDL_GetDisplayBounds(0, &rect) != 0) {
+        SDL_Log("SDL_GetDisplayBounds failed: %s", SDL_GetError());
+        return -1;
+    }
+    if(rect.w / SIZEX < rect.h / SIZEY) {
+        disp_bounds.szx = rect.w;
+        disp_bounds.szy = rect.w * SIZEY / SIZEX;
+        /* calculate labyrinth size */
+        disp_bounds.labyrinthx = rect.w * 2 / 3;
+        disp_bounds.labyrinthy = disp_bounds.labyrinthx / SIZEX * SIZEY;
+    } else {
+        disp_bounds.szy = rect.h;
+        disp_bounds.szx = rect.h * SIZEX / SIZEY;
+        disp_bounds.labyrinthy = rect.h * 2 / 3;
+        disp_bounds.labyrinthx = disp_bounds.labyrinthy * SIZEY / SIZEX;
+    }
+    disp_bounds.stepszx = disp_bounds.labyrinthx * STEPSIZEX / SIZEX;
+    disp_bounds.stepszy = disp_bounds.labyrinthx * STEPSIZEY / SIZEX;
+    /* set banner boundaries */
+    disp_bounds.bannerx = disp_bounds.labyrinthx + 1;
+    disp_bounds.bannerx_end = disp_bounds.szx;
+    disp_bounds.bannery = 1;
+    disp_bounds.bannery_end = disp_bounds.szy;
+    printf("display bounds: "
+    		"szx=%d, szy=%d,"
+    		"labyrinth=%dx%d"
+    		"step=%dx%d"
+    		"banner=%dx%d to %dx%d",
+			disp_bounds.szx,
+			disp_bounds.szy,
+			disp_bounds.labyrinthx, disp_bounds.labyrinthy,
+			disp_bounds.stepszx, disp_bounds.stepszy,
+			disp_bounds.bannerx, disp_bounds.bannery,
+			disp_bounds.bannerx_end, disp_bounds.bannery_end);
+    return 0;
 }
 
 void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1,y1,x1,y2);
 }
 
 void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
     short incx, short incy)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1, y1, x1+incx, y1+incy);
 }
 
 void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1, y1, x2, y1);
 }
 
 void port_printat(unsigned short x, unsigned short y, char *s)
 {
-    /* TODO, now printing to CMDLINE */
-    printf("%s\n\r", s);
+	static bool firsttime=true;
+	if(firsttime) {
+		SDL_Color c = { 255, 255, 255};
+		fc = FC_CreateFont();
+		FC_LoadFont(fc, ren,
+				"DejaVuSerif.ttf",
+				20, FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
+		firsttime = false;
+	}
+	FC_Draw(fc, ren, x, y, s);
+	//SDL_Delay(100);
+	//SDL_RenderPresent(ren);
 }
 
 /* Plot a line using the Bresenham algorithm
@@ -130,6 +189,7 @@ void port_printat(unsigned short x, unsigned short y, char *s)
 void port_line(unsigned short x1, unsigned short y1,
         unsigned short x2, unsigned short y2)
 {
+    SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderDrawLine(ren, x1, y1, x2, y2);
 }
 
@@ -140,14 +200,15 @@ unsigned long port_get_time(void)
 
 void port_colour_banner(void)
 {
-    unsigned char x;
-    unsigned char y;
-
-    for(x=25;x<40;++x) {
-        for(y=0;y<25;++y) {
-            pset(x, y);
-        }
-    }
+	SDL_Rect rect = {
+			.x = disp_bounds.bannerx,
+			.y = disp_bounds.bannery,
+			.w = disp_bounds.bannerx_end - disp_bounds.bannerx,
+			.h = disp_bounds.bannery_end - disp_bounds.bannery
+	};
+	SDL_SetRenderDrawColor(ren, 210, 10, 10, 255);
+	SDL_RenderFillRect(ren, &rect);
+	SDL_RenderPresent(ren);
 }
 
 long port_get_current_time(void)
@@ -197,4 +258,18 @@ void port_fflushMazeRegion(void)
 {
     SDL_SetRenderDrawColor(ren, 0x00, 0x66, 0x00, 0xFF);
     SDL_RenderPresent(ren);
+}
+void port_music_on(void){}
+void port_music_off(void){}
+void port_font_magnification(unsigned char magnification)
+{
+    (void)magnification;
+}
+void port_exit(void)
+{
+	SDL_DestroyRenderer(ren);
+	SDL_DestroyWindow(win);
+	TTF_Quit();
+	SDL_Quit();
+	exit(0);
 }

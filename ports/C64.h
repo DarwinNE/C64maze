@@ -26,6 +26,10 @@ void port_fflushMazeRegion(void);
 unsigned char port_sound_irq(void);
 void port_start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3);
 void port_loadVICFont(unsigned char magnification);
+void port_font_magnification(unsigned char magnification);
 char port_getch(void);
+void port_music_on(void);
+void port_music_off(void);
+void port_exit(void);
 
 #endif /* C64 */

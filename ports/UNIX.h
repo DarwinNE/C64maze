@@ -9,7 +9,7 @@
 void port_pset(unsigned int x, unsigned int y);
 void port_clearMazeRegion(void);
 void port_fflushMazeRegion(void);
-void port_graphics_init(void);
+int port_graphics_init(void);
 void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2);
 void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
     short incx, short incy);
@@ -25,5 +25,9 @@ unsigned char port_sound_irq(void);
 void port_start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3);
 void port_loadVICFont(unsigned char magnification);
 char port_getch(void);
+void port_music_on(void);
+void port_music_off(void);
+void port_font_magnification(unsigned char magnification);
+void port_exit(void);
 
 #endif /* UNIX*/

@@ -34,6 +34,20 @@ char positionx;
 char positiony;
 unsigned char style=0x1;
 
+#if (P_CURRENT== P_C64)
+#define LABYRINTHSZX_DYN	SIZEX
+#define LABYRINTHSZY_DYN	SIZEY
+#define LABSTEPSZX_DYN	STEPSIZEX
+#define LABSTEPSZY_DYN	STEPSIZEY
+#else
+display_bounds_t disp_bounds;
+#define LABYRINTHSZX_DYN	disp_bounds.labyrinthx
+#define LABYRINTHSZY_DYN	disp_bounds.labyrinthy
+#define LABSTEPSZX_DYN	disp_bounds.stepszx
+#define LABSTEPSZY_DYN 	disp_bounds.stepszy
+#endif
+
+
 char exitx=13;
 char exity=1;
     /*  0 = north
@@ -237,53 +251,53 @@ void drawLabyrinthView()
             break;
         }
         // Some pre-calculated data for wall and corner drawing.
-        sszx=step*STEPSIZEX;
-        sszy=step*STEPSIZEY;
-        sszxp1=(step+1)*STEPSIZEX;
-        sszyp1=(step+1)*STEPSIZEY;
+        sszx=step*LABSTEPSZX_DYN;
+        sszy=step*LABSTEPSZY_DYN;
+        sszxp1=(step+1)*LABSTEPSZX_DYN;
+        sszyp1=(step+1)*LABSTEPSZY_DYN;
         // Wall on the right?
         if(labyrinth[posx+rightx+(posy+righty)*labyrinthSizeX]=='*') {
-            line(SIZEX-sszx,sszy,
-                 SIZEX-sszxp1,sszyp1);
-            line(SIZEX-sszx,SIZEY-sszy,
-                 SIZEX-sszxp1,SIZEY-sszyp1);
+            line(LABYRINTHSZX_DYN-sszx,sszy,
+                 LABYRINTHSZX_DYN-sszxp1,sszyp1);
+            line(LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszy,
+                 LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1);
         } else {
             // Closer vertical line
-            line(SIZEX-sszx,sszy,
-                 SIZEX-sszx,SIZEY-sszy);
+            line(LABYRINTHSZX_DYN-sszx,sszy,
+                 LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszy);
             // Farther vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
-                line(SIZEX-sszxp1,sszyp1,
-                    SIZEX-sszxp1,SIZEY-sszyp1);
+                line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
+                    LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1);
             }
             // Upper horisontal line
-            line(SIZEX-sszxp1,sszyp1,
-                 SIZEX-sszx,sszyp1);
+            line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
+                 LABYRINTHSZX_DYN-sszx,sszyp1);
             // Lower horisontal line
-            line(SIZEX-sszxp1,SIZEY-sszyp1,
-                 SIZEX-sszx,SIZEY-sszyp1);
+            line(LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1,
+                 LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszyp1);
         }
         // Wall on the left?
         if(labyrinth[posx+leftx+(posy+lefty)*labyrinthSizeX]=='*') {
             line(sszx,sszy,
                  sszxp1,sszyp1);
-            line(sszx,SIZEY-sszy,
-                 sszxp1,SIZEY-sszyp1);
+            line(sszx,LABYRINTHSZY_DYN-sszy,
+                 sszxp1,LABYRINTHSZY_DYN-sszyp1);
         } else {
             // Closer vertical line
             line(sszx,sszy,
-                 sszx,SIZEY-sszy);
+                 sszx,LABYRINTHSZY_DYN-sszy);
             // Farter vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
                 line(sszxp1,sszyp1,
-                 sszxp1,SIZEY-sszyp1);
+                 sszxp1,LABYRINTHSZY_DYN-sszyp1);
             }
             // Upper horisontal line
             line(sszxp1,sszyp1,
                  sszx,sszyp1);
             // Lower horisontal line
-            line(sszxp1,SIZEY-sszyp1,
-                 sszx,SIZEY-sszyp1);
+            line(sszxp1,LABYRINTHSZY_DYN-sszyp1,
+                 sszx,LABYRINTHSZY_DYN-sszyp1);
         }
         // Advance one step farther from the player.
         posx+=advancex;
@@ -300,17 +314,17 @@ void drawLabyrinthView()
     }
     // We have a wall at the end of our sight
     if(wall==TRUE)
-        box(step*STEPSIZEX,step*STEPSIZEY,
-            SIZEX-step*STEPSIZEX,SIZEY-step*STEPSIZEY);
+        box(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     // The exit is in sight!
     if(wayout) {
         ++step;
-        box(step*STEPSIZEX,step*STEPSIZEY,
-            SIZEX-step*STEPSIZEX,SIZEY-step*STEPSIZEY);
-        line(step*STEPSIZEX,step*STEPSIZEY,
-            SIZEX-step*STEPSIZEX,SIZEY-step*STEPSIZEY);
-        line(SIZEX-step*STEPSIZEX,step*STEPSIZEY,
-            step*STEPSIZEX,SIZEY-step*STEPSIZEY);
+        box(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
+        line(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
+        line(LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+            step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     }
 }
 
@@ -379,10 +393,11 @@ void colour_banner(void)
 
 /** Draw the banner on the right side of the screen.
 */
-void draw_banner()
+void draw_banner(void)
 {
     colour_banner();
     port_loadVICFont(2);
+#if P_CURRENT == P_C64
     printat(204,17,"c64maze");
     port_loadVICFont(1);
     box(251,53,278,84);
@@ -396,6 +411,32 @@ void draw_banner()
     printat(207,160,"igor1101 2019");
     port_loadVICFont(2);
     line(200,0,200,199);
+#elif (P_CURRENT == P_UNIX)
+    unsigned short xoffset = disp_bounds.bannerx;
+    unsigned short xbannersz = disp_bounds.bannerx_end - disp_bounds.bannerx;
+    unsigned short xbannerhalfsz = xbannersz / 2;
+    unsigned short xbanner13sz = xbannersz / 3;
+    unsigned short xbanner23sz = xbannersz * 2 / 3;
+    unsigned short xmiddle = xoffset + xbannerhalfsz;
+    unsigned short xmiddletxt = xoffset + xbanner13sz;
+    unsigned short xmiddletxt_end = xoffset + xbanner23sz;
+    unsigned short ymiddle = disp_bounds.bannery_end / 2;
+    unsigned short yend = disp_bounds.bannery_end;
+    printat(xmiddletxt,17,"c64maze");
+    port_loadVICFont(1);
+    box(xoffset, 0, xoffset + xbannersz, yend);
+    box(xmiddletxt - 2,ymiddle - 40 ,xmiddletxt_end + 2,ymiddle + 40);
+    printat(xmiddle,ymiddle - 20,"t");
+    printat(xmiddle - 18,ymiddle,"f+g");
+    printat(xmiddle,ymiddle + 20,"v");
+    printat(xoffset,ymiddle + 40,"[p] view maze");
+    printat(xoffset,ymiddle + 60,"[m] music 1/0");
+    printat(xoffset,ymiddle + 80,"[a] restart  ");
+    printat(xoffset,ymiddle - 60,"d. bucci 2017");
+    printat(xoffset,ymiddle - 80,"igor1101 2019");
+    port_loadVICFont(2);
+    line(xoffset,0,200,199);
+#endif /* platform == C64 */
 }
 
 long start_time;
@@ -444,7 +485,7 @@ void show_maze()
     unsigned char x;
     unsigned char y;
     unsigned int by;
-    char *pt;
+    const char *pt;
 
     char message[]="elapsed:      s";
 
@@ -453,6 +494,7 @@ void show_maze()
     start_time-=60l*30l; // 30 seconds penalty.
 
     port_clearHGRpage();
+    /* findout appropriate box size */
     for(y=0; y<labyrinthSizeY;++y) {
         //by=COLOR_MEM+y*40;
         pt=labyrinth+y*labyrinthSizeX;
@@ -485,9 +527,9 @@ void show_maze()
             ++by;
         }
     }
-    //f.magnification=1;
+    port_font_magnification(1);
     printat(15,150,"https://github.com/darwinne/c64maze");
-    //f.magnification=2;
+    port_font_magnification(2);
     write_time(message,9);
     printat(40,170,message);
     fflushMazeRegion();
@@ -565,10 +607,9 @@ void main(void)
             c=getch();
             iv=FALSE;
             switch(c) {
-#if PLATFORM_MAZE == UNIX
                 case 'q':   //Exit
-                    exit(0);
-#endif
+                	game_exit();
+                	break;
                 case 't':   // Forward
                     move_forward();
                     break;
@@ -599,10 +640,10 @@ void main(void)
                     break;
                 case 'm':   // Toggle music on/off
                     if(music==TRUE) {
-                        //POKE(0xD418,0);
+                        port_music_off();
                         music=FALSE;
                     } else {
-                        //POKE(0xD418,15);
+                        port_music_on();
                         music=TRUE;
                     }
                     break;
@@ -616,4 +657,9 @@ void main(void)
             positiony=oldy;
         }
     }
+}
+
+void game_exit(void)
+{
+	port_exit();
 }
