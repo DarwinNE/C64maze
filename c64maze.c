@@ -411,20 +411,31 @@ void draw_banner(void)
     printat(207,160,"igor1101 2019");
     port_loadVICFont(2);
     line(200,0,200,199);
-#else
-    printat(disp_bounds.bannerx,17,"c64maze");
+#elif (P_CURRENT == P_UNIX)
+    unsigned short xoffset = disp_bounds.bannerx;
+    unsigned short xbannersz = disp_bounds.bannerx_end - disp_bounds.bannerx;
+    unsigned short xbannerhalfsz = xbannersz / 2;
+    unsigned short xbanner13sz = xbannersz / 3;
+    unsigned short xbanner23sz = xbannersz * 2 / 3;
+    unsigned short xmiddle = xoffset + xbannerhalfsz;
+    unsigned short xmiddletxt = xoffset + xbanner13sz;
+    unsigned short xmiddletxt_end = xoffset + xbanner23sz;
+    unsigned short ymiddle = disp_bounds.bannery_end / 2;
+    unsigned short yend = disp_bounds.bannery_end;
+    printat(xmiddletxt,17,"c64maze");
     port_loadVICFont(1);
-    box(251,53,278,84);
-    printat(260,55,"t");
-    printat(252,65,"f+g");
-    printat(260,75,"v");
-    printat(207,100,"[p] view maze");
-    printat(207,110,"[m] music 1/0");
-    printat(207,120,"[a] restart  ");
-    printat(207,170,"d. bucci 2017");
-    printat(207,160,"igor1101 2019");
+    box(xoffset, 0, xoffset + xbannersz, yend);
+    box(xmiddletxt - 2,ymiddle - 40 ,xmiddletxt_end + 2,ymiddle + 40);
+    printat(xmiddle,ymiddle - 20,"t");
+    printat(xmiddle - 18,ymiddle,"f+g");
+    printat(xmiddle,ymiddle + 20,"v");
+    printat(xoffset,ymiddle + 40,"[p] view maze");
+    printat(xoffset,ymiddle + 60,"[m] music 1/0");
+    printat(xoffset,ymiddle + 80,"[a] restart  ");
+    printat(xoffset,ymiddle - 60,"d. bucci 2017");
+    printat(xoffset,ymiddle - 80,"igor1101 2019");
     port_loadVICFont(2);
-    line(200,0,200,199);
+    line(xoffset,0,200,199);
 #endif /* platform == C64 */
 }
 
