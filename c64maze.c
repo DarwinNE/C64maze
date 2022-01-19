@@ -34,18 +34,18 @@ char positionx;
 char positiony;
 unsigned char style=0x1;
 
-#if (P_CURRENT== P_C64)
+/*#if (P_CURRENT== P_C64)
 #define LABYRINTHSZX_DYN	SIZEX
 #define LABYRINTHSZY_DYN	SIZEY
 #define LABSTEPSZX_DYN	STEPSIZEX
 #define LABSTEPSZY_DYN	STEPSIZEY
-#else
+#else*/
 display_bounds_t disp_bounds;
 #define LABYRINTHSZX_DYN	disp_bounds.labyrinthx
 #define LABYRINTHSZY_DYN	disp_bounds.labyrinthy
 #define LABSTEPSZX_DYN	disp_bounds.stepszx
 #define LABSTEPSZY_DYN 	disp_bounds.stepszy
-#endif
+//#endif
 
 
 char exitx=13;
@@ -482,10 +482,10 @@ char *write_time(char *message, unsigned char start)
 */
 void show_maze()
 {
-    unsigned char x;
-    unsigned char y;
-    unsigned int by;
-    const char *pt;
+    unsigned char x = 0;
+    unsigned char y = 0;
+    unsigned int by = 0;
+    const char *pt = 0;
 
     char message[]="elapsed:      s";
 

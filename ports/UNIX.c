@@ -224,6 +224,7 @@ static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
 unsigned char port_sound_irq(void)
 {
     /* TODO */
+    return 0;
 }
 
 void port_start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)

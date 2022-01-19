@@ -1,6 +1,12 @@
 #ifndef _C64MAZE_H
 #define _C64MAZE_H
 
+#ifdef WIN32
+#define PLATFORM_MAZE UNIX
+#define P_C64 1
+#define P_CURRENT P_UNIX
+#endif
+
 
 #define a_abs(a) ((a)>0 ? (a):(-a))
 #define a_max(a,b) (((a)>(b))?(a):(b))
