@@ -6,3 +6,6 @@ c64maze.o
 .cproject
 .project
 .settings
+Debug
+.vs
+Release
