@@ -1,7 +1,9 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include "c64maze.h"
+#ifndef NO_SOUND
 #include"sid_tune.h"
+#endif
 #define EXPAND1(x) x
 #define EXPAND2(x, y)    EXPAND1(x)y
 #define EXPAND3(x, y, z) EXPAND2(x, y)z
@@ -405,7 +407,9 @@ void draw_banner(void)
     printat(252,65,"f+g");
     printat(260,75,"v");
     printat(207,100,"[p] view maze");
+#ifndef NO_SOUND
     printat(207,110,"[m] music 1/0");
+#endif
     printat(207,120,"[a] restart  ");
     printat(207,170,"d. bucci 2017");
     printat(207,160,"igor1101 2019");
@@ -430,7 +434,9 @@ void draw_banner(void)
     printat(xmiddle - 18,ymiddle,"f+g");
     printat(xmiddle,ymiddle + 20,"v");
     printat(xoffset,ymiddle + 40,"[p] view maze");
+#ifndef NO_SOUND
     printat(xoffset,ymiddle + 60,"[m] music 1/0");
+#endif
     printat(xoffset,ymiddle + 80,"[a] restart  ");
     printat(xoffset,ymiddle - 60,"d. bucci 2017");
     printat(xoffset,ymiddle - 80,"igor1101 2019");
@@ -501,26 +507,28 @@ void show_maze()
         for(x=0; x<labyrinthSizeX;++x) {
             if(pt[x]=='*') {
                 //POKE(by,9);
-#define SZ      (8)
+#ifndef SZ
+#define SZ	8
+#endif
                 box(x*SZ,y*SZ, x*SZ+SZ, y*SZ+SZ);
             } else if(positiony==y && positionx==x) {
-                box(x*8+2,y*8+2,x*8+5,y*8+5);
+                box(x*SZ+2,y*SZ+2,x*SZ+5,y*SZ+5);
                 switch(orientation) {
                     case 0:
-                        line(x*8+3,y*8,x*8+3,y*8+2);
-                        line(x*8+4,y*8,x*8+4,y*8+2);
+                        line(x*SZ+3,y*SZ,x*SZ+3,y*SZ+2);
+                        line(x*SZ+4,y*SZ,x*SZ+4,y*SZ+2);
                         break;
                     case 1:
-                        line(x*8,y*8+3,x*8+2,y*8+3);
-                        line(x*8,y*8+4,x*8+2,y*8+4);
+                        line(x*SZ,y*SZ+3,x*SZ+2,y*SZ+3);
+                        line(x*SZ,y*SZ+4,x*SZ+2,y*SZ+4);
                         break;
                     case 2:
-                        line(x*8+3,y*8+5,x*8+3,y*8+7);
-                        line(x*8+4,y*8+5,x*8+4,y*8+7);
+                        line(x*SZ+3,y*SZ+5,x*SZ+3,y*SZ+7);
+                        line(x*SZ+4,y*SZ+5,x*SZ+4,y*SZ+7);
                         break;
                     case 3:
-                        line(x*8+5,y*8+3,x*8+7,y*8+3);
-                        line(x*8+5,y*8+4,x*8+7,y*8+4);
+                        line(x*SZ+5,y*SZ+3,x*SZ+7,y*SZ+3);
+                        line(x*SZ+5,y*SZ+4,x*SZ+7,y*SZ+4);
                         break;
                 }
             }
@@ -545,6 +553,7 @@ void show_maze()
 // byte 5: second byte of the message (if applicable)
 //
 
+#ifndef NO_SOUND
 
 unsigned char sound_irq(void)
 {
@@ -554,6 +563,9 @@ void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
 {
     port_start_sound(l1, l2, l3);
 }
+
+#endif
+
 void start_game(void)
 {
     start_time=get_current_time();
@@ -573,7 +585,9 @@ void main(void)
     unsigned char music=TRUE;
     char time_spent[]="     s";
 
+#ifndef NO_SOUND
     start_sound(music_v1, music_v2, music_v3);
+#endif
 
     graphics_init();
     restart:
@@ -638,6 +652,7 @@ void main(void)
                     start_game();
                     oldx=0;
                     break;
+#ifndef NO_SOUND
                 case 'm':   // Toggle music on/off
                     if(music==TRUE) {
                         port_music_off();
@@ -647,6 +662,7 @@ void main(void)
                         music=TRUE;
                     }
                     break;
+#endif
                 default:
                     iv=TRUE;
             };
