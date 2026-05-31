@@ -1,7 +1,6 @@
 #include<stdlib.h>
-#include<stdio.h>
 #include "c64maze.h"
-
+//#define NO_SOUND
 #ifndef NO_SOUND
     #include"sid_tune.h"
 #endif
@@ -49,61 +48,63 @@ unsigned char style=0x1;
 
 char exitx=13;
 char exity=1;
+
+
     /*  0 = north
         1 = west
         2 = sud
         3 = east
     */
 char orientation=0;
-/* Turn on a pixel by accessing directly to the video RAM */
-void pset(unsigned int x, unsigned int y)
+
+int leftx;
+int lefty;
+int rightx;
+int righty;
+int advancex;
+int advancey;
+
+long start_time;
+
+
+void random_exit(void)
 {
-    port_pset(x, y);
+    do {
+        exitx = (rand()>>8)*labyrinthSizeX/(RAND_MAX>>8);
+        exity = (rand()>>8)*labyrinthSizeY/(RAND_MAX>>8);
+    } while(labyrinth[exitx+exity*labyrinthSizeX]!=' ');
 }
 
-/* printat prints a text at the given location unsing the font described
-   by the structure font */
-void printat(unsigned short x, unsigned short y, char *s)
+void flipx(void)
 {
-    port_printat(x, y, s);
+    int x,y;
+    char temp;
+    
+    for (x=0; x<labyrinthSizeX/2; ++x) {
+        for (y=0; y<labyrinthSizeY; ++y) {
+            temp=labyrinth[x+y*labyrinthSizeX];
+            labyrinth[x+y*labyrinthSizeX]=
+                labyrinth[(labyrinthSizeX-x-1)+y*labyrinthSizeX];
+            labyrinth[(labyrinthSizeX-x-1)+y*labyrinthSizeX]=temp;
+        }
+    }
 }
 
-void clearMazeRegion(void)
+void flipy(void)
 {
-    port_clearMazeRegion();
+    int x,y;
+    char temp;
+    
+    for (x=0; x<labyrinthSizeX; ++x) {
+        for (y=0; y<labyrinthSizeY/2; ++y) {
+            temp=labyrinth[x+y*labyrinthSizeX];
+            labyrinth[x+y*labyrinthSizeX]=
+                labyrinth[x+(labyrinthSizeY-y-1)*labyrinthSizeX];
+            labyrinth[x+(labyrinthSizeY-y-1)*labyrinthSizeX]=temp;
+        }
+    }
 }
 
-void fflushMazeRegion(void)
-{
-    port_fflushMazeRegion();
-}
-
-void graphics_init(void)
-{
-    port_graphics_init();
-}
-
-void vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
-{
-    port_vert_line(x1, y1, y2);
-}
-
-void diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
-    short incx, short incy)
-{
-    port_diag_line(x1, y1, ix, incx, incy);
-}
-
-void hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
-{
-    port_hor_line(x1, x2, y1);
-}
-
-void line(unsigned short x1, unsigned short y1,
-        unsigned short x2, unsigned short y2)
-{
-    port_line(x1, y1, x2, y2);
-}
 
 /* box draws a box given the coordinates of the two
    diagonal corners. From Nelson Johnson, "Advanced
@@ -124,32 +125,23 @@ void box(unsigned short x1, unsigned short y1, unsigned short x2,
     // The simplified code does not handle every style lines, so one must check
     // for it.
     if(style==0x1) {
-        hor_line(xul, xlr, yul);
-        hor_line(xul, xlr, ylr);
-        vert_line(xul, yul, ylr);
-        vert_line(xlr, yul, ylr);
+        port_hor_line(xul, xlr, yul);
+        port_hor_line(xul, xlr, ylr);
+        port_vert_line(xul, yul, ylr);
+        port_vert_line(xlr, yul, ylr);
     } else {
-        line(xul, yul, xlr, yul);
-        line(xlr, yul, xlr, ylr);
-        line(xlr, ylr, xul, ylr);
-        line(xul, ylr, xul, yul);
+        port_line(xul, yul, xlr, yul);
+        port_line(xlr, yul, xlr, ylr);
+        port_line(xlr, ylr, xul, ylr);
+        port_line(xul, ylr, xul, yul);
     }
 }
 
-char getch(void)
-{
-    return port_getch();
-}
-
-unsigned long get_time(void)
-{
-    return port_get_time();
-}
 /** Choose randomly the starting position in the maze.
 */
 void choose_start_position()
 {
-    unsigned int time=get_time();
+    unsigned int time=port_get_time();
     srand(time);
     do {
         startx=(labyrinthSizeX*(rand()/(RAND_MAX/100)))/100;
@@ -158,13 +150,6 @@ void choose_start_position()
     positionx=startx;
     positiony=starty;
 }
-
-int leftx;
-int lefty;
-int rightx;
-int righty;
-int advancex;
-int advancey;
 
 void set_orientation(void)
 {
@@ -256,46 +241,46 @@ void drawLabyrinthView()
         sszyp1=(step+1)*LABSTEPSZY_DYN;
         // Wall on the right?
         if(labyrinth[posx+rightx+(posy+righty)*labyrinthSizeX]=='*') {
-            line(LABYRINTHSZX_DYN-sszx,sszy,
+            port_line(LABYRINTHSZX_DYN-sszx,sszy,
                  LABYRINTHSZX_DYN-sszxp1,sszyp1);
-            line(LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszy,
+            port_line(LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszy,
                  LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1);
         } else {
             // Closer vertical line
-            line(LABYRINTHSZX_DYN-sszx,sszy,
+            port_line(LABYRINTHSZX_DYN-sszx,sszy,
                  LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszy);
             // Farther vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
-                line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
+                port_line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
                     LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1);
             }
             // Upper horisontal line
-            line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
+            port_line(LABYRINTHSZX_DYN-sszxp1,sszyp1,
                  LABYRINTHSZX_DYN-sszx,sszyp1);
             // Lower horisontal line
-            line(LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1,
+            port_line(LABYRINTHSZX_DYN-sszxp1,LABYRINTHSZY_DYN-sszyp1,
                  LABYRINTHSZX_DYN-sszx,LABYRINTHSZY_DYN-sszyp1);
         }
         // Wall on the left?
         if(labyrinth[posx+leftx+(posy+lefty)*labyrinthSizeX]=='*') {
-            line(sszx,sszy,
+            port_line(sszx,sszy,
                  sszxp1,sszyp1);
-            line(sszx,LABYRINTHSZY_DYN-sszy,
+            port_line(sszx,LABYRINTHSZY_DYN-sszy,
                  sszxp1,LABYRINTHSZY_DYN-sszyp1);
         } else {
             // Closer vertical line
-            line(sszx,sszy,
+            port_line(sszx,sszy,
                  sszx,LABYRINTHSZY_DYN-sszy);
             // Farter vertical line
             if(labyrinth[posx+advancex+(posy+advancey)*labyrinthSizeX]!='*') {
-                line(sszxp1,sszyp1,
-                 sszxp1,LABYRINTHSZY_DYN-sszyp1);
+                port_line(sszxp1,sszyp1,
+                    sszxp1,LABYRINTHSZY_DYN-sszyp1);
             }
             // Upper horisontal line
-            line(sszxp1,sszyp1,
+            port_line(sszxp1,sszyp1,
                  sszx,sszyp1);
             // Lower horisontal line
-            line(sszxp1,LABYRINTHSZY_DYN-sszyp1,
+            port_line(sszxp1,LABYRINTHSZY_DYN-sszyp1,
                  sszx,LABYRINTHSZY_DYN-sszyp1);
         }
         // Advance one step farther from the player.
@@ -322,10 +307,10 @@ void drawLabyrinthView()
         box(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
             LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,
             LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
-        line(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+        port_line(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
             LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,
             LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
-        line(LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
+        port_line(LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
             step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     }
 }
@@ -400,21 +385,22 @@ void draw_banner(void)
     colour_banner();
     port_loadVICFont(2);
 #if P_CURRENT == P_C64
-    printat(204,17,"c64maze");
+    port_printat(204,17,"c64maze");
     port_loadVICFont(1);
     box(251,53,278,84);
-    printat(260,55,"t");
-    printat(252,65,"f+g");
-    printat(260,75,"v");
-    printat(207,100,"[p] view maze");
+    port_printat(260,55,"t");
+    port_printat(252,65,"f+g");
+    port_printat(260,75,"v");
+    port_printat(207,100,"[p] view maze");
 #ifndef NO_SOUND
-    printat(207,110,"[m] music 1/0");
+    port_printat(207,110,"[m] music 1/0");
 #endif
-    printat(207,120,"[a] restart  ");
-    printat(207,170,"d. bucci 2017");
-    printat(207,160,"igor1101 2019");
+    port_printat(207,120,"[a] restart  ");
+    
+    port_printat(207,170,"d. bucci 2017");
+    port_printat(207,160,"igor1101 2019");
     port_loadVICFont(2);
-    line(200,0,200,199);
+    port_line(200,0,200,199);
 #elif (P_CURRENT == P_UNIX)
     unsigned short xoffset = disp_bounds.bannerx;
     unsigned short xbannersz = disp_bounds.bannerx_end - disp_bounds.bannerx;
@@ -426,26 +412,25 @@ void draw_banner(void)
     unsigned short xmiddletxt_end = xoffset + xbanner23sz;
     unsigned short ymiddle = disp_bounds.bannery_end / 2;
     unsigned short yend = disp_bounds.bannery_end;
-    printat(xmiddletxt,17,"c64maze");
+    port_printat(xmiddletxt,17,"c64maze");
     port_loadVICFont(1);
     box(xoffset, 0, xoffset + xbannersz, yend);
     box(xmiddletxt - 2,ymiddle - 40 ,xmiddletxt_end + 2,ymiddle + 40);
-    printat(xmiddle,ymiddle - 20,"t");
-    printat(xmiddle - 18,ymiddle,"f+g");
-    printat(xmiddle,ymiddle + 20,"v");
-    printat(xoffset,ymiddle + 40,"[p] view maze");
+    port_printat(xmiddle,ymiddle - 20,"t");
+    port_printat(xmiddle - 18,ymiddle,"f+g");
+    port_printat(xmiddle,ymiddle + 20,"v");
+    port_printat(xoffset,ymiddle + 40,"[p] view maze");
 #ifndef NO_SOUND
-    printat(xoffset,ymiddle + 60,"[m] music 1/0");
+    port_printat(xoffset,ymiddle + 60,"[m] music 1/0");
 #endif
-    printat(xoffset,ymiddle + 80,"[a] restart  ");
-    printat(xoffset,ymiddle - 60,"d. bucci 2017");
-    printat(xoffset,ymiddle - 80,"igor1101 2019");
+    port_printat(xoffset,ymiddle + 80,"[a] restart  ");
+    port_printat(xoffset,ymiddle - 60,"d. bucci 2017");
+    port_printat(xoffset,ymiddle - 80,"igor1101 2019");
     port_loadVICFont(2);
-    line(xoffset,0,200,199);
+    port_line(xoffset,0,200,199);
 #endif /* platform == C64 */
 }
 
-long start_time;
 
 long get_current_time(void)
 {
@@ -506,7 +491,6 @@ void show_maze()
         pt=labyrinth+y*labyrinthSizeX;
         for(x=0; x<labyrinthSizeX;++x) {
             if(pt[x]=='*') {
-                //POKE(by,9);
 #ifndef SZ
 #define SZ	8
 #endif
@@ -515,33 +499,36 @@ void show_maze()
                 box(x*SZ+2,y*SZ+2,x*SZ+5,y*SZ+5);
                 switch(orientation) {
                     case 0:
-                        line(x*SZ+3,y*SZ,x*SZ+3,y*SZ+2);
-                        line(x*SZ+4,y*SZ,x*SZ+4,y*SZ+2);
+                        port_line(x*SZ+3,y*SZ,x*SZ+3,y*SZ+2);
+                        port_line(x*SZ+4,y*SZ,x*SZ+4,y*SZ+2);
                         break;
                     case 1:
-                        line(x*SZ,y*SZ+3,x*SZ+2,y*SZ+3);
-                        line(x*SZ,y*SZ+4,x*SZ+2,y*SZ+4);
+                        port_line(x*SZ,y*SZ+3,x*SZ+2,y*SZ+3);
+                        port_line(x*SZ,y*SZ+4,x*SZ+2,y*SZ+4);
                         break;
                     case 2:
-                        line(x*SZ+3,y*SZ+5,x*SZ+3,y*SZ+7);
-                        line(x*SZ+4,y*SZ+5,x*SZ+4,y*SZ+7);
+                        port_line(x*SZ+3,y*SZ+5,x*SZ+3,y*SZ+7);
+                        port_line(x*SZ+4,y*SZ+5,x*SZ+4,y*SZ+7);
                         break;
                     case 3:
-                        line(x*SZ+5,y*SZ+3,x*SZ+7,y*SZ+3);
-                        line(x*SZ+5,y*SZ+4,x*SZ+7,y*SZ+4);
+                        port_line(x*SZ+5,y*SZ+3,x*SZ+7,y*SZ+3);
+                        port_line(x*SZ+5,y*SZ+4,x*SZ+7,y*SZ+4);
                         break;
                 }
+            } else if(x==exitx && y==exity) {
+                box(x*SZ+2,y*SZ+2,x*SZ+5,y*SZ+5);
             }
             ++by;
         }
     }
     port_font_magnification(1);
-    printat(15,150,"https://github.com/darwinne/c64maze");
+    port_printat(15,150,"https://github.com/darwinne/c64maze");
+
     port_font_magnification(2);
     write_time(message,9);
-    printat(40,170,message);
-    fflushMazeRegion();
-    getch();
+    port_printat(40,170,message);
+    port_fflushMazeRegion();
+    port_getch();
     port_clearHGRpage();
     draw_banner();
 }
@@ -566,11 +553,23 @@ void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
 
 #endif
 
+//#include<stdio.h>
 void start_game(void)
 {
-    start_time=get_current_time();
+    int flip;
+    //char mm[80];
+    flip=rand();
+    if(flip & 0x01) flipx();
+    if(flip & 0x02) flipy();
+
     choose_start_position();
+    random_exit();
     draw_banner();
+    //sprintf(mm, "flip=%d",flip);
+    //port_printat(150,100,mm);
+
+    start_time=get_current_time();
+
 }
 
 /** Starting point of the program.
@@ -584,12 +583,13 @@ void main(void)
     char iv=TRUE;
     unsigned char music=TRUE;
     char time_spent[]="     s";
+    _randomize();       // CC65 initialization of the random number gen.
 
 #ifndef NO_SOUND
     start_sound(music_v1, music_v2, music_v3);
 #endif
 
-    graphics_init();
+    port_graphics_init();
     restart:
     start_game();
 
@@ -598,32 +598,31 @@ void main(void)
             oldx=positionx;
             oldy=positiony;
             oldo=orientation;
-            clearMazeRegion();
+            port_clearMazeRegion();
             drawLabyrinthView();
-            fflushMazeRegion();
+            port_fflushMazeRegion();
             if (positionx==startx && positiony==starty)
-                printat(40,100,"step in!");
+                port_printat(40,100,"step in!");
             if (positionx==exitx && positiony==exity) {
-                printat(40,70,"way out!");
+                port_printat(40,70,"way out!");
                 write_time(time_spent,0);
-                printat(50,100,time_spent);
+                port_printat(50,100,time_spent);
                 port_loadVICFont(1);
-                printat(55, 140,  "press a key");
-                printat(47, 150, "to play again");
-                getch();
+                port_printat(55, 140,  "press a key");
+                port_printat(47, 150, "to play again");
+                port_getch();
                 oldx=0;
                 goto restart;   // No program for the C64 would be complete
                                 // without at least a GOTO statement somewhere.
             }
-            //POKE(SCREEN_BORDER,4);
         }
         do {
-            c=getch();
+            c=port_getch();
             iv=FALSE;
             switch(c) {
                 case 'q':   //Exit
-                	game_exit();
-                	break;
+                    game_exit();
+                    break;
                 case 't':   // Forward
                     move_forward();
                     break;

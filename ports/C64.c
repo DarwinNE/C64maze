@@ -15,6 +15,18 @@
 #define COLOR_MEM 0x8C00U
 
 
+unsigned int C64_freq_table[]={
+    278, 295, 313, 331, 351, 372, 394, 417, 442, 468, 496, 526, 557, 590, 625,
+    662, 702, 743, 788, 834, 884, 937, 992, 1051, 1114, 1180, 1250, 1325, 1403,
+    1487, 1575, 1669, 1768, 1873, 1985, 2103, 2228, 2360, 2500, 2649, 2807,
+    2973, 3150, 3338, 3536, 3746, 3969, 4205, 4455, 4720, 5001, 5298, 5613,
+    5947, 6300, 6675, 7072, 7493, 7938, 8410, 8910, 9440, 10001, 10596, 11226,
+    11894, 12601, 13350, 14144, 14985, 15876, 16820, 17820, 18880, 20003, 21192,
+    22452, 23787, 25202, 26700, 28288, 29970, 31752, 33640, 35641, 37760, 40005,
+    42384, 44904, 47574, 50403, 53401, 56576, 59940, 63504}; 
+
+
+
 #define POKE(addr,val)     (*(unsigned char*) (addr) = (val))
 #define PEEK(addr)         (*(unsigned char*) (addr))
 /* local vars */
@@ -49,6 +61,7 @@ struct font f;
 /* local funcs defs */
 static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
     unsigned char *wsh);
+
 /* funcs */
 void port_pset(unsigned int x, unsigned int y)
 {
@@ -173,7 +186,7 @@ void port_graphics_init(void)
 {
     POKE (56576U, 0x01);
     POKE (53272U, 0x38);
-    POKE (53265U, 0x36);
+    POKE (53265U, 0x38+3);
     port_clearHGRpage();
 }
 
@@ -184,6 +197,10 @@ void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
     static unsigned int by;
     static char v;
     static unsigned int cc;
+
+    if(x1>=320)
+        return;
+    if(y2>=200) y2=199;
 
     cc=BASE+(x1&0xFFF8);
     v=pix_pos[(unsigned char)x1&7];
@@ -238,6 +255,12 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
     static unsigned int d;
     static unsigned int e;
     static unsigned int by;
+    
+    if(y1>=200)
+        return;
+    if(x2>=320)
+        x2=319;
+
     d=y1&0xFFF8;
     e=d*40;
     by=BASE+e+((unsigned char)y1&7);
@@ -438,6 +461,7 @@ long port_get_current_time(void)
 static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
     unsigned char *wsh)
 {
+    unsigned char freq;
     unsigned int timestamp=**ptr+ (*(*ptr+1)<<8);
     if(timestamp>cnt) {
         return;
@@ -446,8 +470,9 @@ static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
     ++*ptr;
     switch(**ptr) {
         case NOTE_CODE:                 // Note event
-            POKE(sid_pointer,*(++*ptr));        // Frequency lo
-            POKE(sid_pointer+1,*(++*ptr));      // Frequency hi
+            freq=*(++*ptr)-24;
+            POKE(sid_pointer,C64_freq_table[freq]&0xFF);          // Freq. lo
+            POKE(sid_pointer+1,(C64_freq_table[freq]&0xFF00)>>8); // Freq. hi
             POKE(sid_pointer+4,0);
             POKE(sid_pointer+4,*wsh);          // Note on
             ++*ptr;
