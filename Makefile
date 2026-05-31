@@ -25,7 +25,7 @@ ifeq ($(PLATFORM),C64)
 	$(AS) $(TARGET).s
 	$(CC) $(CFLAGS) -Oi -T -t c64 ports/$(PLATFORM).c 
 	$(AS) ports/$(PLATFORM).s
-	$(LD) -o $(TARGET) -t c64 $(TARGET).o ports/$(PLATFORM).o c64.lib
+	$(LD) -o $(TARGET).prg -t c64 $(TARGET).o ports/$(PLATFORM).o c64.lib
 endif
 ifeq ($(PLATFORM),UNIX)
 	$(CC) $(CFLAGS) -o SDL_FontCache.o -c ports/SDL_FontCache/SDL_FontCache.c
@@ -34,6 +34,7 @@ endif
 
 clean:
 	-rm `find ./ -name *.o`
+	-rm *.prg
 	-rm $(TARGET)
 	-rm $(TARGET).s
 	-rm ports/$(PLATFORM).s

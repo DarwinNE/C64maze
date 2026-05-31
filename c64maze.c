@@ -1,16 +1,11 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include "c64maze.h"
-#ifndef NO_SOUND
-#include"sid_tune.h"
-#endif
-#define EXPAND1(x) x
-#define EXPAND2(x, y)    EXPAND1(x)y
-#define EXPAND3(x, y, z) EXPAND2(x, y)z
 
-#undef INCLUDE_NAME
-#define INCLUDE_NAME <ports/EXPAND2(PLATFORM_MAZE,.h)>
-#include INCLUDE_NAME
+#ifndef NO_SOUND
+    #include"sid_tune.h"
+#endif
+
 
 char labyrinth[] =  "****************************************"
                     "*      *    *     * *   *        *     *"
@@ -36,18 +31,20 @@ char positionx;
 char positiony;
 unsigned char style=0x1;
 
-/*#if (P_CURRENT== P_C64)
-#define LABYRINTHSZX_DYN	SIZEX
-#define LABYRINTHSZY_DYN	SIZEY
-#define LABSTEPSZX_DYN	STEPSIZEX
-#define LABSTEPSZY_DYN	STEPSIZEY
-#else*/
-display_bounds_t disp_bounds;
-#define LABYRINTHSZX_DYN	disp_bounds.labyrinthx
-#define LABYRINTHSZY_DYN	disp_bounds.labyrinthy
-#define LABSTEPSZX_DYN	disp_bounds.stepszx
-#define LABSTEPSZY_DYN 	disp_bounds.stepszy
-//#endif
+#if (P_CURRENT== P_C64)
+    #include "ports/C64.h"
+    #define LABYRINTHSZX_DYN	SIZEX
+    #define LABYRINTHSZY_DYN	SIZEY
+    #define LABSTEPSZX_DYN	STEPSIZEX
+    #define LABSTEPSZY_DYN	STEPSIZEY
+#else
+    #include "ports/UNIX.h"
+    display_bounds_t disp_bounds;
+    #define LABYRINTHSZX_DYN	disp_bounds.labyrinthx
+    #define LABYRINTHSZY_DYN	disp_bounds.labyrinthy
+    #define LABSTEPSZX_DYN	disp_bounds.stepszx
+    #define LABSTEPSZY_DYN 	disp_bounds.stepszy
+#endif
 
 
 char exitx=13;
@@ -226,7 +223,7 @@ void drawLabyrinthView()
     set_orientation();
 
     /* Draw the maze in isometric perspective starting from the position of
-       the player and going progressively farther from him, until a wall is
+       the player and going progressively farther from them, until a wall is
        hit or until the distance becomes greater than 5 steps.
     */
     for(step=0;(wall==FALSE)&&(step<6);++step) {
@@ -317,14 +314,17 @@ void drawLabyrinthView()
     // We have a wall at the end of our sight
     if(wall==TRUE)
         box(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
-            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,
+            LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     // The exit is in sight!
     if(wayout) {
         ++step;
         box(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
-            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,
+            LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
         line(step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
-            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
+            LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,
+            LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
         line(LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
             step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     }
