@@ -32,10 +32,18 @@ unsigned char style=0x1;
 
 #if (P_CURRENT== P_C64)
     #include "ports/C64.h"
-    #define LABYRINTHSZX_DYN	SIZEX
-    #define LABYRINTHSZY_DYN	SIZEY
-    #define LABSTEPSZX_DYN	STEPSIZEX
-    #define LABSTEPSZY_DYN	STEPSIZEY
+    #define LABYRINTHSZX_DYN    SIZEX
+    #define LABYRINTHSZY_DYN    SIZEY
+    #define LABSTEPSZX_DYN  STEPSIZEX
+    #define LABSTEPSZY_DYN  STEPSIZEY
+    #define MULT 1
+#elif (P_CURRENT== P_C128)
+    #include "ports/C128.h"
+    #define LABYRINTHSZX_DYN    400
+    #define LABYRINTHSZY_DYN    200
+    #define LABSTEPSZX_DYN      24
+    #define LABSTEPSZY_DYN      14
+    #define MULT 2
 #else
     #include "ports/UNIX.h"
     display_bounds_t disp_bounds;
@@ -43,6 +51,7 @@ unsigned char style=0x1;
     #define LABYRINTHSZY_DYN	disp_bounds.labyrinthy
     #define LABSTEPSZX_DYN	disp_bounds.stepszx
     #define LABSTEPSZY_DYN 	disp_bounds.stepszy
+    #define MULT 1
 #endif
 
 
@@ -383,8 +392,28 @@ void colour_banner(void)
 void draw_banner(void)
 {
     colour_banner();
+#if P_CURRENT == P_C128
     port_loadVICFont(2);
+    port_printat(204*2,17,"c128maze");
+    port_loadVICFont(1);
+    box(251*2,53,278*2,84);
+    port_printat(260*2,55,"t");
+    port_printat(252*2,65,"f + g");
+    port_printat(260*2,75,"v");
+    port_printat(207*2,100,"[p] view maze");
+#ifndef NO_SOUND
+    port_printat(207*2,110,"[m] music 1/0");
+#endif
+    port_printat(207*2,120,"[a] restart  ");
+    
+    port_printat(207*2,170,"d. bucci 2017");
+    port_printat(207*2,160,"igor1101 2019");
+    port_loadVICFont(2);
+    //port_line(200*2,0,200*2,199);
+    
+#endif
 #if P_CURRENT == P_C64
+    port_loadVICFont(2);
     port_printat(204,17,"c64maze");
     port_loadVICFont(1);
     box(251,53,278,84);
@@ -557,7 +586,6 @@ void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
 void start_game(void)
 {
     int flip;
-    //char mm[80];
     flip=rand();
     if(flip & 0x01) flipx();
     if(flip & 0x02) flipy();
@@ -565,11 +593,8 @@ void start_game(void)
     choose_start_position();
     random_exit();
     draw_banner();
-    //sprintf(mm, "flip=%d",flip);
-    //port_printat(150,100,mm);
 
     start_time=get_current_time();
-
 }
 
 /** Starting point of the program.
@@ -583,6 +608,7 @@ void main(void)
     char iv=TRUE;
     unsigned char music=TRUE;
     char time_spent[]="     s";
+    int t;
     _randomize();       // CC65 initialization of the random number gen.
 
 #ifndef NO_SOUND
@@ -590,6 +616,17 @@ void main(void)
 #endif
 
     port_graphics_init();
+    /*
+    for(t=0; t<200; ++t) {
+        port_line(200-t,t,200+t,t);
+    }
+    for(t=0; t<200; ++t) {
+        port_line(200-t+98,t,200+t+98,t);
+    }
+    
+    while(1);*/
+    
+    
     restart:
     start_game();
 
@@ -602,14 +639,14 @@ void main(void)
             drawLabyrinthView();
             port_fflushMazeRegion();
             if (positionx==startx && positiony==starty)
-                port_printat(40,100,"step in!");
+                port_printat(40*MULT,100,"step in!");
             if (positionx==exitx && positiony==exity) {
-                port_printat(40,70,"way out!");
+                port_printat(40*MULT,70,"way out!");
                 write_time(time_spent,0);
-                port_printat(50,100,time_spent);
+                port_printat(50*MULT,100,time_spent);
                 port_loadVICFont(1);
-                port_printat(55, 140,  "press a key");
-                port_printat(47, 150, "to play again");
+                port_printat(55*MULT, 140,  "press a key");
+                port_printat(47*MULT, 150, "to play again");
                 port_getch();
                 oldx=0;
                 goto restart;   // No program for the C64 would be complete

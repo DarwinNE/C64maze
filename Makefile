@@ -10,6 +10,13 @@ AS=ca65
 LD=ld65
 CFLAGS += -Os -DPLATFORM_MAZE=C64 -DP_CURRENT=P_C64
 endif
+ifeq ($(PLATFORM),C128)
+	#commodore 128 platform
+CC=cc65
+AS=ca65
+LD=ld65
+CFLAGS += -Os -DPLATFORM_MAZE=C128 -DP_CURRENT=P_C128
+endif
 ifeq ($(PLATFORM),UNIX)
 	#unix platform
 CC=gcc
@@ -25,7 +32,14 @@ ifeq ($(PLATFORM),C64)
 	$(AS) $(TARGET).s
 	$(CC) $(CFLAGS) -Oi -T -t c64 ports/$(PLATFORM).c 
 	$(AS) ports/$(PLATFORM).s
-	$(LD) -o $(TARGET).prg -t c64 $(TARGET).o ports/$(PLATFORM).o c64.lib
+	$(LD) -o c64maze.prg -t c64 $(TARGET).o ports/$(PLATFORM).o c64.lib
+endif
+ifeq ($(PLATFORM),C128) 
+	$(CC) $(CFLAGS) -Oi -T -t c128 $(TARGET).c 
+	$(AS) $(TARGET).s
+	$(CC) $(CFLAGS) -Oi -T -t c128 ports/$(PLATFORM).c 
+	$(AS) ports/$(PLATFORM).s
+	$(LD) -o c128maze.prg -t c128 $(TARGET).o ports/$(PLATFORM).o c128.lib
 endif
 ifeq ($(PLATFORM),UNIX)
 	$(CC) $(CFLAGS) -o SDL_FontCache.o -c ports/SDL_FontCache/SDL_FontCache.c
