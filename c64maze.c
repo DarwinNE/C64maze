@@ -24,8 +24,8 @@ char labyrinth[] =  "****************************************"
                     "**   *  *         * *   *      * *     *"
                     "****************************************";
 
-char startx;
-char starty;
+char startx=1;
+char starty=1;
 char positionx;
 char positiony;
 unsigned char style=0x1;
@@ -198,6 +198,8 @@ void set_orientation(void)
     }
 }
 
+//#include <stdio.h>
+
 /** In this function, the maze view is shown from the current point and
     orientation of the player (those are specified in global variables).
 */
@@ -213,6 +215,7 @@ void drawLabyrinthView()
     unsigned char wall=FALSE;
     unsigned char wayout=FALSE;
 
+    unsigned long tt=port_get_current_time();
     style=0x1;
     set_orientation();
 
@@ -322,6 +325,8 @@ void drawLabyrinthView()
         port_line(LABYRINTHSZX_DYN-step*LABSTEPSZX_DYN,step*LABSTEPSZY_DYN,
             step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     }
+    
+    //printf("Elapsed: %d\n",(int)(port_get_current_time()-tt));
 }
 
 /** Be sure that the current player position is correct.
@@ -461,11 +466,6 @@ void draw_banner(void)
 }
 
 
-long get_current_time(void)
-{
-    return port_get_current_time();
-}
-
 char *write_time(char *message, unsigned char start)
 {
     long approx=0;
@@ -473,7 +473,7 @@ char *write_time(char *message, unsigned char start)
     char hundreds=0;
     char tens=0;
     char seconds=0;
-    approx=get_current_time()-start_time;
+    approx=port_get_current_time()-start_time;
     if(approx>60*1000) {
         thousands = approx/60l/1000l;
         approx-=thousands*60l*1000l;
@@ -582,19 +582,18 @@ void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
 
 #endif
 
-//#include<stdio.h>
 void start_game(void)
 {
     int flip;
     flip=rand();
-    if(flip & 0x01) flipx();
-    if(flip & 0x02) flipy();
+    //if(flip & 0x01) flipx();
+    //if(flip & 0x02) flipy();
 
     choose_start_position();
     random_exit();
     draw_banner();
 
-    start_time=get_current_time();
+    start_time=port_get_current_time();
 }
 
 /** Starting point of the program.

@@ -1,9 +1,9 @@
-#include<6502.h>
-#include<conio.h>
+#include <6502.h>
+#include <conio.h>
 #include <c64maze.h>
-#include"vic_font.h"
-#include"sid_tune.h"
-#include"C64.h"
+#include "vic_font.h"
+#include "sid_tune.h"
+#include "C128.h"
 /* local definitions */
 #define VDC_REGISTERN  0xD600
 #define VDC_DATA       0xD601
@@ -46,7 +46,6 @@ unsigned int C64_freq_table[]={
 #define POKE(addr,val)     (*(unsigned char*) (addr) = (val))
 #define PEEK(addr)         (*(unsigned char*) (addr))
 /* local vars */
-static unsigned char pix_pos[]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 unsigned int cnt;
 #define STACK_SIZE 256
 unsigned char stackSize[STACK_SIZE];
@@ -119,35 +118,38 @@ void back_to_txt(void)
 
 }
 
+// Access to global variables is slightly faster on cc65
+
+static unsigned int by;
+static unsigned char oep;
+static unsigned char ll,hh;
 
 /* funcs */
 void port_pset(unsigned int x, unsigned int y)
 {
-    static unsigned int by;
-    static unsigned char oep;
-    static unsigned char ll,hh;
-    
-
-    //by=(x>>3)+y*80;
     by=x>>3;
     by+=y<<6;
     by+=y<<4;
     
     (*(byte *)VDC_REGISTERN)=18;
-    hh=(by&0xFF00)>>8;
+    hh=by>>8;
     (*(byte *)VDC_DATA)=hh;
+
     (*(byte *)VDC_REGISTERN)=19;
     ll=by&0x00FF;
     (*(byte *)VDC_DATA)=ll;
+
     (*(byte *)VDC_REGISTERN)=31;
     oep= (*(byte *)VDC_DATA);
 
-    oep |= pix_pos[(unsigned char)x&7];
+    oep |= 0x80>>((unsigned char)x&7);
 
     (*(byte *)VDC_REGISTERN)=18;
     (*(byte *)VDC_DATA)=hh;
+
     (*(byte *)VDC_REGISTERN)=19;
-    (*(byte *)VDC_DATA)=ll;  
+    (*(byte *)VDC_DATA)=ll;
+
     (*(byte *)VDC_REGISTERN)=31;
     (*(byte *)VDC_DATA)=oep;
 }
@@ -188,9 +190,10 @@ void port_graphics_init(void)
     //port_clearHGRpage();
 }
 
-void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
+void port_vert_line(unsigned short x, unsigned short y1, unsigned short y2)
 {
     static unsigned int y;
+    static unsigned char mask;
 
     if(y2<y1) {
         y=y1;
@@ -198,12 +201,41 @@ void port_vert_line(unsigned short x1, unsigned short y1, unsigned short y2)
         y2=y;
     }
 
-    if(x1>=640)
+    if(x>=640)
         return;
     if(y2>=200) y2=199;
+
+    by=x>>3;
+    by+=y1<<6;
+    by+=y1<<4;
+    mask=0x80>>((unsigned char)x&7);
+
+    for(y=y1;y<y2;++y) {
+        //port_pset(x1,y);
+       
+        (*(byte *)VDC_REGISTERN)=18;
+        hh=by>>8;
+        (*(byte *)VDC_DATA)=hh;
     
-    for(y=y1;y<y2;++y)
-        port_pset(x1,y);
+        (*(byte *)VDC_REGISTERN)=19;
+        ll=by&0x00FF;
+        (*(byte *)VDC_DATA)=ll;
+    
+        (*(byte *)VDC_REGISTERN)=31;
+        oep= (*(byte *)VDC_DATA);
+    
+        oep |= mask;
+    
+        (*(byte *)VDC_REGISTERN)=18;
+        (*(byte *)VDC_DATA)=hh;
+    
+        (*(byte *)VDC_REGISTERN)=19;
+        (*(byte *)VDC_DATA)=ll;
+    
+        (*(byte *)VDC_REGISTERN)=31;
+        (*(byte *)VDC_DATA)=oep;
+        by+=80;
+    }
 }
 
 void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
@@ -282,17 +314,19 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
    by the structure font */
 void port_printat(unsigned short x, unsigned short y, char *s)
 {
-    short i,j,k;
-    unsigned short a;
-    short t;
+    unsigned char i,j,k;
+    unsigned char a;
+    unsigned short hh;
     
+    short t;
     for (i=0; s[i]!='\0';++i) {
+        hh=x+f.incX*f.magnification;
         for (j=0;j<f.incY*f.magnification;++j) {
             a=f.pDesc[f.pos[s[i]]+j/f.magnification];
             t=1;
             for(k=0;a!=0;++k){
                 if (a & 0x0001)
-                    port_pset(x+f.incX*f.magnification-k, y+j);
+                    port_pset(hh-k, y+j);
                 if(t==f.magnification){
                     a>>=1;
                     t=1;
@@ -456,7 +490,7 @@ void port_line(unsigned short x1, unsigned short y1,
             (*(byte *)VDC_REGISTERN)=31;
             oep= (*(byte *)VDC_DATA);
         
-            oep |= pix_pos[(unsigned char)x1&7];
+            oep |= 0x80>>((unsigned char)x1&7);
         
             (*(byte *)VDC_REGISTERN)=18;
             (*(byte *)VDC_DATA)=hh;
@@ -472,7 +506,7 @@ void port_line(unsigned short x1, unsigned short y1,
 
 unsigned long port_get_time(void)
 {
-    return 0;//PEEK(160)+PEEK(161)*256;
+    return PEEK(160)+PEEK(161)*256;
 }
 
 void port_colour_banner(void)
@@ -489,13 +523,12 @@ void port_colour_banner(void)
 
 long port_get_current_time(void)
 {
-    /*long ctime=((char)PEEK(160));
+    long ctime=((char)PEEK(160));
     ctime<<=8;
     ctime+=((char)PEEK(161));
     ctime<<=8;
     ctime+=((char)PEEK(162));
-    return ctime;*/
-    return 0;
+    return ctime;
 }
 
 static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
@@ -555,7 +588,7 @@ unsigned char port_sound_irq(void)
 
 void port_start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
 {
-    //POKE(0xD418,15);
+    POKE(0xD418,15);
     ptr1=list1=l1;
     ptr2=list2=l2;
     ptr3=list3=l3;
@@ -599,11 +632,11 @@ void port_fflushMazeRegion(void)
 
 void port_music_off(void)
 {
-    //POKE(0xD418,0);
+    POKE(0xD418,0);
 }
 void port_music_on(void)
 { 
-    //POKE(0xD418,15);
+    POKE(0xD418,15);
 }
 
 void port_exit(void)
