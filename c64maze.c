@@ -198,7 +198,7 @@ void set_orientation(void)
     }
 }
 
-//#include <stdio.h>
+#include <stdio.h>
 
 /** In this function, the maze view is shown from the current point and
     orientation of the player (those are specified in global variables).
@@ -326,7 +326,7 @@ void drawLabyrinthView()
             step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     }
     
-    //printf("Elapsed: %d\n",(int)(port_get_current_time()-tt));
+    printf("Elapsed: %d\n",(int)(port_get_current_time()-tt));
 }
 
 /** Be sure that the current player position is correct.
@@ -396,6 +396,7 @@ void colour_banner(void)
 */
 void draw_banner(void)
 {
+    unsigned long tt=port_get_current_time();
     colour_banner();
 #if P_CURRENT == P_C128
     port_loadVICFont(2);
@@ -462,7 +463,9 @@ void draw_banner(void)
     port_printat(xoffset,ymiddle - 80,"igor1101 2019");
     port_loadVICFont(2);
     port_line(xoffset,0,200,199);
-#endif /* platform == C64 */
+#endif 
+    printf("(banner) elapsed: %d\n",(int)(port_get_current_time()-tt));
+
 }
 
 

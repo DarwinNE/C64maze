@@ -124,61 +124,66 @@ static unsigned int by;
 static unsigned char oep;
 static unsigned char ll,hh;
 
+#define READ_VDC_MEM(hh,ll,oep)\
+    (*(byte *)VDC_REGISTERN)=18;\
+    (*(byte *)VDC_DATA)=(hh);\
+    (*(byte *)VDC_REGISTERN)=19;\
+    (*(byte *)VDC_DATA)=(ll);\
+    (*(byte *)VDC_REGISTERN)=31;\
+    oep= (*(byte *)VDC_DATA)
+ 
+
+#define WRITE_VDC_MEM(hh,ll,oep)\
+    (*(byte *)VDC_REGISTERN)=18;\
+    (*(byte *)VDC_DATA)=(hh);\
+    (*(byte *)VDC_REGISTERN)=19;\
+    (*(byte *)VDC_DATA)=(ll);\
+    (*(byte *)VDC_REGISTERN)=31;\
+    (*(byte *)VDC_DATA)=oep
+
+
 /* funcs */
 void port_pset(unsigned int x, unsigned int y)
 {
     by=x>>3;
     by+=y<<6;
     by+=y<<4;
-    
-    (*(byte *)VDC_REGISTERN)=18;
+
     hh=by>>8;
-    (*(byte *)VDC_DATA)=hh;
-
-    (*(byte *)VDC_REGISTERN)=19;
     ll=by&0x00FF;
-    (*(byte *)VDC_DATA)=ll;
 
-    (*(byte *)VDC_REGISTERN)=31;
-    oep= (*(byte *)VDC_DATA);
-
+    READ_VDC_MEM(hh,ll,oep);
     oep |= 0x80>>((unsigned char)x&7);
-
-    (*(byte *)VDC_REGISTERN)=18;
-    (*(byte *)VDC_DATA)=hh;
-
-    (*(byte *)VDC_REGISTERN)=19;
-    (*(byte *)VDC_DATA)=ll;
-
-    (*(byte *)VDC_REGISTERN)=31;
-    (*(byte *)VDC_DATA)=oep;
+    WRITE_VDC_MEM(hh,ll,oep);
 }
 
 void port_clearHGRpage(void)
 {
-    unsigned char x;
     unsigned char y;
-    static unsigned int by;
+    static unsigned int by=0;
+
     for(y=0;y<200;++y) {
-        by=y*80;
-        write_VDC(18,(by&0xFF00)>>8);    // HI
+        write_VDC(18,by>>8);    // HI
         write_VDC(19,by&0x00FF);         // LO    
-        write_VDC(30, 80); // DATA
-        write_VDC(31, 0); // DATA
+        write_VDC(31, 0); // blank chunk of 8 pixels
+        write_VDC(30, 79); // Repeat 80 bytes
+
+        by+=80; // Goes to the next line
     }
 }
 
 void port_clearMazeRegion(void)
 {
-    unsigned char x;
     unsigned char y;
-    static unsigned int by;
+    static unsigned int by=0;
     for(y=0;y<200;++y) {
         by=y*80;
         write_VDC(18,(by&0xFF00)>>8);    // HI
         write_VDC(19,by&0x00FF);         // LO    
-        write_VDC(30, 400/8); // DATA
         write_VDC(31, 0); // DATA
+        write_VDC(30, 400/8-1); // DATA
+
+        //by+=80; // Goes to the next line
     }
 }
 
@@ -195,11 +200,11 @@ void port_vert_line(unsigned short x, unsigned short y1, unsigned short y2)
     static unsigned int y;
     static unsigned char mask;
 
-    if(y2<y1) {
+   /* if(y2<y1) {
         y=y1;
         y1=y2;
         y2=y;
-    }
+    }*/
 
     if(x>=640)
         return;
@@ -211,29 +216,13 @@ void port_vert_line(unsigned short x, unsigned short y1, unsigned short y2)
     mask=0x80>>((unsigned char)x&7);
 
     for(y=y1;y<y2;++y) {
-        //port_pset(x1,y);
-       
-        (*(byte *)VDC_REGISTERN)=18;
         hh=by>>8;
-        (*(byte *)VDC_DATA)=hh;
-    
-        (*(byte *)VDC_REGISTERN)=19;
         ll=by&0x00FF;
-        (*(byte *)VDC_DATA)=ll;
     
-        (*(byte *)VDC_REGISTERN)=31;
-        oep= (*(byte *)VDC_DATA);
-    
+        READ_VDC_MEM(hh,ll,oep);
         oep |= mask;
-    
-        (*(byte *)VDC_REGISTERN)=18;
-        (*(byte *)VDC_DATA)=hh;
-    
-        (*(byte *)VDC_REGISTERN)=19;
-        (*(byte *)VDC_DATA)=ll;
-    
-        (*(byte *)VDC_REGISTERN)=31;
-        (*(byte *)VDC_DATA)=oep;
+        WRITE_VDC_MEM(hh,ll,oep);
+
         by+=80;
     }
 }
@@ -246,7 +235,16 @@ void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
     static unsigned int by;
     static int i;
     for(i=0;i<=ix;++i){
-        port_pset(x1,y1);
+        by=x1>>3;
+        by+=y1<<6;
+        by+=y1<<4;
+    
+        hh=by>>8;
+        ll=by&0x00FF;
+    
+        READ_VDC_MEM(hh,ll,oep);
+        oep |= 0x80>>((unsigned char)x1&7);
+        WRITE_VDC_MEM(hh,ll,oep);
         if(incx>0)
             ++x1;
         else
@@ -269,11 +267,11 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
     unsigned short x1a;
     unsigned short x2a;
     
-    if(x2<x1) {
+    /*if(x2<x1) {
         x=x1;
         x1=x2;
         x2=x;
-    }
+    }*/
 
     if(y1>=200)
         return;
@@ -283,20 +281,41 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
     x1a=x1&0xFFF8;
     x2a=x2&0xFFF8;
     if(x2<x1a+8) {
-        for(x=x1;x<=x2;++x)
-            port_pset(x,y1);
+        for(x=x1;x<=x2;++x) {
+            by=x>>3;
+            by+=y1<<6;
+            by+=y1<<4;
+        
+            hh=by>>8;
+            ll=by&0x00FF;
+        
+            READ_VDC_MEM(hh,ll,oep);
+            oep |= 0x80>>((unsigned char)x&7);
+            WRITE_VDC_MEM(hh,ll,oep);
+        }
         return;
     }
 
     for(x=x1;x<x1a+8;++x){
-        port_pset(x,y1);
+        by=x>>3;
+        by+=y1<<6;
+        by+=y1<<4;
+    
+        hh=by>>8;
+        ll=by&0x00FF;
+    
+        READ_VDC_MEM(hh,ll,oep);
+        oep |= 0x80>>((unsigned char)x&7);
+        WRITE_VDC_MEM(hh,ll,oep);
     }
 
     ttl=(x2a-x1a)>>3;
     --ttl;
     --ttl;
     if(ttl>0) {
-        by=((x1a>>3)+1)+y1*80;
+        by=((x1a>>3)+1);
+        by+=y1<<6;
+        by+=y1<<4;
     
         write_VDC(18,(by&0xFF00)>>8);    // HI
         write_VDC(19,by&0x00FF);         // LO
@@ -305,7 +324,16 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
     }
     
     for(x=x2a;x<=x2;++x){
-        port_pset(x,y1);
+        by=x>>3;
+        by+=y1<<6;
+        by+=y1<<4;
+    
+        hh=by>>8;
+        ll=by&0x00FF;
+    
+        READ_VDC_MEM(hh,ll,oep);
+        oep |= 0x80>>((unsigned char)x&7);
+        WRITE_VDC_MEM(hh,ll,oep);
     }
     
 }
@@ -314,19 +342,43 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
    by the structure font */
 void port_printat(unsigned short x, unsigned short y, char *s)
 {
-    unsigned char i,j,k;
+    unsigned char j,k,l,m;
     unsigned char a;
-    unsigned short hh;
+    unsigned short h;
+    unsigned short x1,y1, by_y;
+    unsigned char incx=f.incX*f.magnification, incy=f.incY*f.magnification;
     
-    short t;
-    for (i=0; s[i]!='\0';++i) {
-        hh=x+f.incX*f.magnification;
-        for (j=0;j<f.incY*f.magnification;++j) {
-            a=f.pDesc[f.pos[s[i]]+j/f.magnification];
+    unsigned short t;
+    unsigned int ab;
+    char *ps;
+    for (ps=s; *ps!='\0';++ps) {
+        h=x+incx;
+        l=0;
+        m=0;
+        ab=f.pos[*ps];
+        y1=y;
+        by_y=y1<<6;
+        by_y+=y1<<4;
+        for (j=0;j<incy;++j) {
+            a=f.pDesc[ab+l];
+            if(++m==f.magnification) {
+                ++l;
+                m=0;
+            }
             t=1;
             for(k=0;a!=0;++k){
-                if (a & 0x0001)
-                    port_pset(hh-k, y+j);
+                if (a & 0x1) {
+                    x1=h-k;
+                    by=x1>>3;
+                    by+=by_y;
+                
+                    hh=by>>8;
+                    ll=by&0x00FF;
+                
+                    READ_VDC_MEM(hh,ll,oep);
+                    oep |= 0x80>>((unsigned char)x1&7);
+                    WRITE_VDC_MEM(hh,ll,oep);
+                }
                 if(t==f.magnification){
                     a>>=1;
                     t=1;
@@ -334,61 +386,13 @@ void port_printat(unsigned short x, unsigned short y, char *s)
                     ++t;
                 }
             }
+            // On the VDC, incrementing a line yields adding 80 in the video
+            // memory pointer.
+            by_y+=80;
         }
-        x+=f.incX*f.magnification;
+        x+=incx;
     }
 }
-
-/*
-void port_printat(unsigned short x, unsigned short y, char *s)
-{
-    unsigned char i,j,k;
-    unsigned char a;
-    unsigned char t;
-    unsigned int p;
-    unsigned char mm=f.magnification;
-    unsigned char incrementx=f.incX*mm;
-    unsigned char incrementy=f.incY*mm;
-    unsigned int ppos;
-    unsigned char q,r;
-
-    unsigned int by;
-    unsigned int d,e;
-    unsigned int ix;
-    unsigned int loc;
-    for (i=0; s[i]!='\0';++i) {
-        p=0;
-        r=1;
-        ppos=f.pos[s[i]];
-        x+=incrementx;
-        for (j=0;j<incrementy;++j) {
-            a=f.pDesc[ppos+p];
-            if(r==mm){
-                ++p;
-                r=1;
-            } else {
-                ++r;
-            }
-            t=1;
-            q=y+j;
-            d=q&0xFFF8;
-            e=d*40;
-            by=BASE+e+((unsigned char)q&7);
-            for(k=0;a!=0;++k){
-                if (a & 0x0001) {
-                    ix=x-k;
-                    loc=by+(ix&0xFFF8);
-//                    POKE(loc, PEEK(loc) | pix_pos[(unsigned char)ix&7]);
-                } if(t==mm){
-                    a>>=1;
-                    t=1;
-                } else {
-                    ++t;
-                }
-            }
-        }
-    }
-}*/
 
 /* Plot a line using the Bresenham algorithm
    from Nelson Johnson, "Advanced Graphics in C"
@@ -418,6 +422,9 @@ void port_line(unsigned short x1, unsigned short y1,
     static unsigned int ypos;
     static unsigned int i;
     static unsigned char style_mask;
+    static unsigned char mm;
+    static unsigned int by_x;
+    static unsigned int by_y;
 
     incx=x2>x1?1:-1;
     incy=y2>y1?1:-1;
@@ -434,15 +441,13 @@ void port_line(unsigned short x1, unsigned short y1,
             else
                 port_vert_line(x1, y2,y1);
             return;
-        }
-        if(iy==0) {
+        } else if(iy==0) {
             if(incx>0)
                 port_hor_line(x1,x2,y1);
             else
                 port_hor_line(x2,x1,y1);
             return;
-        }
-        if(ix==iy) {
+        } else if(ix==iy) {
             port_diag_line(x1,y1,ix,incx,incy);
             return;
         }
@@ -454,12 +459,21 @@ void port_line(unsigned short x1, unsigned short y1,
     changey=TRUE;
     x=0;
     y=0;
+    by_y=y1<<6;
+    by_y+=y1<<4;
+    by_x=x1>>3;
+    mm=0x80>>((unsigned char)x1&7);
     plot=FALSE;
 
     /* Plot the first pixel */
-    port_pset(x1,y1);
+    by=by_x+by_y;
+    hh=by>>8;
+    ll=by&0x00FF;
+    
+    READ_VDC_MEM(hh,ll,oep);
+    oep |= mm;
+    WRITE_VDC_MEM(hh,ll,oep);
 
-    /* Faster version with continuous line */
     for(i=0; i<=inc; ++i) {
         x += ix;
         y += iy;
@@ -467,37 +481,27 @@ void port_line(unsigned short x1, unsigned short y1,
             plot=TRUE;
             x-=inc;
             x1 +=incx;
+            by_x=x1>>3;
+            mm=0x80>>((unsigned char)x1&7);
         }
         if (y>inc) {
             plot=TRUE;
             y-=inc;
             y1 +=incy;
             changey=TRUE;
+            by_y=y1<<6;
+            by_y+=y1<<4;
         }
         if (plot && (style_mask&0x0001u)) {
             plot=FALSE;
 
-            by=x1>>3;
-            by+=y1<<6;
-            by+=y1<<4;
-            
-            (*(byte *)VDC_REGISTERN)=18;
-            hh=(by&0xFF00)>>8;
-            (*(byte *)VDC_DATA)=hh;
-            (*(byte *)VDC_REGISTERN)=19;
+            by=by_x+by_y;
+            hh=by>>8;
             ll=by&0x00FF;
-            (*(byte *)VDC_DATA)=ll;
-            (*(byte *)VDC_REGISTERN)=31;
-            oep= (*(byte *)VDC_DATA);
-        
-            oep |= 0x80>>((unsigned char)x1&7);
-        
-            (*(byte *)VDC_REGISTERN)=18;
-            (*(byte *)VDC_DATA)=hh;
-            (*(byte *)VDC_REGISTERN)=19;
-            (*(byte *)VDC_DATA)=ll;  
-            (*(byte *)VDC_REGISTERN)=31;
-            (*(byte *)VDC_DATA)=oep;
+            
+            READ_VDC_MEM(hh,ll,oep);
+            oep |= mm;
+            WRITE_VDC_MEM(hh,ll,oep);
         }
         style_mask >>= 1;
         if(style_mask==0) style_mask=style;
@@ -514,11 +518,6 @@ void port_colour_banner(void)
     unsigned char x;
     unsigned char y;
 
-    for(x=25;x<40;++x) {
-        for(y=0;y<25;++y) {
-            //POKE(COLOR_MEM+x+y*40,0x67);
-        }
-    }
 }
 
 long port_get_current_time(void)
