@@ -200,6 +200,8 @@ void port_vert_line(unsigned short x, unsigned short y1, unsigned short y2)
     static unsigned int y;
     static unsigned char mask;
 
+    // The port_line function ensures that the following condition is respected
+    
    /* if(y2<y1) {
         y=y1;
         y1=y2;
@@ -230,8 +232,7 @@ void port_vert_line(unsigned short x, unsigned short y1, unsigned short y2)
 void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
     short incx, short incy)
 {
-    static unsigned int d;
-    static unsigned int e;
+
     static unsigned int by;
     static int i;
     for(i=0;i<=ix;++i){
@@ -259,7 +260,6 @@ void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
 void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
 {
     static unsigned int x;
-    unsigned char i;
     signed char ttl;
 
     static unsigned int by;
@@ -410,16 +410,15 @@ void port_line(unsigned short x1, unsigned short y1,
     static unsigned short iy;
     static unsigned short inc;
 
+    static unsigned short x;
+    static unsigned int y;
+
     static unsigned char changey;
-    static short x, y;
     static unsigned char plot;
 
-    static unsigned int d;
-    static unsigned int e;
     static unsigned int by;
     static unsigned char oep;
     static unsigned char ll,hh;
-    static unsigned int ypos;
     static unsigned int i;
     static unsigned char style_mask;
     static unsigned char mm;
@@ -515,9 +514,7 @@ unsigned long port_get_time(void)
 
 void port_colour_banner(void)
 {
-    unsigned char x;
-    unsigned char y;
-
+    // Nothing to do here
 }
 
 long port_get_current_time(void)
@@ -535,7 +532,7 @@ static void port_process_voice(unsigned char **ptr, unsigned char *sid_pointer,
 {
     unsigned char freq;
     unsigned int timestamp=**ptr+ (*(*ptr+1)<<8);
-    return;
+
     if(timestamp>cnt) {
         return;
     }
@@ -585,6 +582,7 @@ unsigned char port_sound_irq(void)
     return (IRQ_NOT_HANDLED);
 }
 
+
 void port_start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
 {
     POKE(0xD418,15);
@@ -597,6 +595,12 @@ void port_start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
     set_irq(&port_sound_irq, stackSize, STACK_SIZE);
     CLI();
 }
+
+void port_init_sound(void)
+{
+    port_start_sound(music_v1, music_v2, music_v3);
+}
+
 
 void port_loadVICFont(unsigned char magnification)
 {

@@ -525,6 +525,11 @@ void port_start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
     CLI();
 }
 
+void port_init_sound(void)
+{
+    port_start_sound(music_v1, music_v2, music_v3);
+}
+
 void port_loadVICFont(unsigned char magnification)
 {
     unsigned int i;

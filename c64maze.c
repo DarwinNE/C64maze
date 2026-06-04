@@ -1,9 +1,6 @@
 #include<stdlib.h>
 #include "c64maze.h"
-//#define NO_SOUND
-#ifndef NO_SOUND
-    #include"sid_tune.h"
-#endif
+
 
 
 char labyrinth[] =  "****************************************"
@@ -198,7 +195,7 @@ void set_orientation(void)
     }
 }
 
-#include <stdio.h>
+//#include <stdio.h>
 
 /** In this function, the maze view is shown from the current point and
     orientation of the player (those are specified in global variables).
@@ -326,7 +323,7 @@ void drawLabyrinthView()
             step*LABSTEPSZX_DYN,LABYRINTHSZY_DYN-step*LABSTEPSZY_DYN);
     }
     
-    printf("Elapsed: %d\n",(int)(port_get_current_time()-tt));
+    //printf("Elapsed: %d\n",(int)(port_get_current_time()-tt));
 }
 
 /** Be sure that the current player position is correct.
@@ -400,20 +397,20 @@ void draw_banner(void)
     colour_banner();
 #if P_CURRENT == P_C128
     port_loadVICFont(2);
-    port_printat(204*2,17,"c128maze");
+    port_printat(204*2+50,17,"c128maze");
     port_loadVICFont(1);
-    box(251*2,53,278*2,84);
-    port_printat(260*2,55,"t");
-    port_printat(252*2,65,"f + g");
-    port_printat(260*2,75,"v");
-    port_printat(207*2,100,"[p] view maze");
+    box(251*2,53,281*2+1,84);
+    port_printat(260*2,55," t");
+    port_printat(252*2,65,"f  +  g");
+    port_printat(260*2,75," v");
+    port_printat(207*2+50,100,"[p] view maze");
 #ifndef NO_SOUND
-    port_printat(207*2,110,"[m] music 1/0");
+    port_printat(207*2+50,110,"[m] music 1/0");
 #endif
-    port_printat(207*2,120,"[a] restart  ");
+    port_printat(207*2+50,120,"[a] restart  ");
     
-    port_printat(207*2,170,"d. bucci 2017");
-    port_printat(207*2,160,"igor1101 2019");
+    port_printat(207*2+50,170,"d. bucci 2017-2026");
+    port_printat(207*2+50,160,"igor1101 2019");
     port_loadVICFont(2);
     //port_line(200*2,0,200*2,199);
     
@@ -464,7 +461,7 @@ void draw_banner(void)
     port_loadVICFont(2);
     port_line(xoffset,0,200,199);
 #endif 
-    printf("(banner) elapsed: %d\n",(int)(port_get_current_time()-tt));
+    //printf("(banner) elapsed: %d\n",(int)(port_get_current_time()-tt));
 
 }
 
@@ -574,14 +571,7 @@ void show_maze()
 
 #ifndef NO_SOUND
 
-unsigned char sound_irq(void)
-{
-    return port_sound_irq();
-}
-void start_sound(unsigned char *l1, unsigned char *l2, unsigned char *l3)
-{
-    port_start_sound(l1, l2, l3);
-}
+
 
 #endif
 
@@ -589,8 +579,8 @@ void start_game(void)
 {
     int flip;
     flip=rand();
-    //if(flip & 0x01) flipx();
-    //if(flip & 0x02) flipy();
+    if(flip & 0x01) flipx();
+    if(flip & 0x02) flipy();
 
     choose_start_position();
     random_exit();
@@ -614,7 +604,7 @@ void main(void)
     _randomize();       // CC65 initialization of the random number gen.
 
 #ifndef NO_SOUND
-    start_sound(music_v1, music_v2, music_v3);
+    port_init_sound();
 #endif
 
     port_graphics_init();

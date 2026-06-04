@@ -31,5 +31,8 @@ char port_getch(void);
 void port_music_on(void);
 void port_music_off(void);
 void port_exit(void);
+void port_init_sound(void);
+
+
 
 #endif /* C64 */
