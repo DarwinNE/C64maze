@@ -165,8 +165,9 @@ void port_clearHGRpage(void)
     for(y=0;y<200;++y) {
         write_VDC(18,by>>8);    // HI
         write_VDC(19,by&0x00FF);         // LO    
-        write_VDC(31, 0); // blank chunk of 8 pixels
         write_VDC(30, 79); // Repeat 80 bytes
+
+        write_VDC(31, 0); // blank chunk of 8 pixels
 
         by+=80; // Goes to the next line
     }
