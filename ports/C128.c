@@ -126,10 +126,16 @@ static unsigned char ll,hh;
 
 #define READ_VDC_MEM(hh,ll,oep)\
     (*(byte *)VDC_REGISTERN)=18;\
+    /*asm("       bit $D600");\
+    asm("       bpl #$FE");*/\
     (*(byte *)VDC_DATA)=(hh);\
     (*(byte *)VDC_REGISTERN)=19;\
+    /*asm("       bit $D600");\
+    asm("       bpl #$FE");*/\
     (*(byte *)VDC_DATA)=(ll);\
     (*(byte *)VDC_REGISTERN)=31;\
+    /*asm("       bit $D600");\
+    asm("       bpl #$FE");*/\
     oep= (*(byte *)VDC_DATA)
  
 
@@ -163,13 +169,13 @@ void port_clearHGRpage(void)
     static unsigned int by=0;
 
     for(y=0;y<200;++y) {
+        by=y*80;
         write_VDC(18,by>>8);    // HI
-        write_VDC(19,by&0x00FF);         // LO    
+        write_VDC(19,by&0x00FF);         // LO          
+        write_VDC(31, 0); // blank chunk of 8 pixels
         write_VDC(30, 79); // Repeat 80 bytes
 
-        write_VDC(31, 0); // blank chunk of 8 pixels
-
-        by+=80; // Goes to the next line
+        //by+=80; // Goes to the next line
     }
 }
 
