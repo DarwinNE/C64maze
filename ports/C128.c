@@ -15,6 +15,42 @@ byte bmp_hdr[8];
 byte save_VDC[37];
 
 
+#define READ_VDC_MEM(aa,hh,ll,oep)\
+    asm("       ldx #$12");\
+    asm("       stx $D600");\
+    asm("@wait"aa"1:      bit $D600");\
+    asm("       bpl @wait"aa"1");\
+    (*(byte *)VDC_DATA)=(hh);\
+    asm("       ldx #$13");\
+    asm("       stx $D600");\
+    asm("@wait"aa"2:      bit $D600");\
+    asm("       bpl @wait"aa"2");\
+    (*(byte *)VDC_DATA)=(ll);\
+    asm("       ldx #$1F");\
+    asm("       stx $D600");\
+    asm("@wait"aa"3:      bit $D600");\
+    asm("       bpl @wait"aa"3");\
+    oep= (*(byte *)VDC_DATA)
+ 
+
+#define WRITE_VDC_MEM(aa,hh,ll,oep)\
+    asm("       ldx #$12");\
+    asm("       stx $D600");\
+    asm("@wait"aa"1:      bit $D600");\
+    asm("       bpl @wait"aa"1");\
+    (*(byte *)VDC_DATA)=(hh);\
+    asm("       ldx #$13");\
+    asm("       stx $D600");\
+    asm("@wait"aa"2:      bit $D600");\
+    asm("       bpl @wait"aa"2");\
+    (*(byte *)VDC_DATA)=(ll);\
+    asm("       ldx #$1F");\
+    asm("       stx $D600");\
+    asm("@wait"aa"3:      bit $D600");\
+    asm("       bpl @wait"aa"3");\
+    (*(byte *)VDC_DATA)=(oep)
+
+
 void write_VDC(byte reg, byte data)
 {
     (*(byte *)VDC_REGISTERN)=reg;
@@ -124,29 +160,6 @@ static unsigned int by;
 static unsigned char oep;
 static unsigned char ll,hh;
 
-#define READ_VDC_MEM(hh,ll,oep)\
-    (*(byte *)VDC_REGISTERN)=18;\
-    /*asm("       bit $D600");\
-    asm("       bpl #$FE");*/\
-    (*(byte *)VDC_DATA)=(hh);\
-    (*(byte *)VDC_REGISTERN)=19;\
-    /*asm("       bit $D600");\
-    asm("       bpl #$FE");*/\
-    (*(byte *)VDC_DATA)=(ll);\
-    (*(byte *)VDC_REGISTERN)=31;\
-    /*asm("       bit $D600");\
-    asm("       bpl #$FE");*/\
-    oep= (*(byte *)VDC_DATA)
- 
-
-#define WRITE_VDC_MEM(hh,ll,oep)\
-    (*(byte *)VDC_REGISTERN)=18;\
-    (*(byte *)VDC_DATA)=(hh);\
-    (*(byte *)VDC_REGISTERN)=19;\
-    (*(byte *)VDC_DATA)=(ll);\
-    (*(byte *)VDC_REGISTERN)=31;\
-    (*(byte *)VDC_DATA)=oep
-
 
 /* funcs */
 void port_pset(unsigned int x, unsigned int y)
@@ -158,9 +171,9 @@ void port_pset(unsigned int x, unsigned int y)
     hh=by>>8;
     ll=by&0x00FF;
 
-    READ_VDC_MEM(hh,ll,oep);
+    READ_VDC_MEM("wait1",hh,ll,oep);
     oep |= 0x80>>((unsigned char)x&7);
-    WRITE_VDC_MEM(hh,ll,oep);
+    WRITE_VDC_MEM("wait10",hh,ll,oep);
 }
 
 void port_clearHGRpage(void)
@@ -228,9 +241,9 @@ void port_vert_line(unsigned short x, unsigned short y1, unsigned short y2)
         hh=by>>8;
         ll=by&0x00FF;
     
-        READ_VDC_MEM(hh,ll,oep);
+        READ_VDC_MEM("wait1",hh,ll,oep);
         oep |= mask;
-        WRITE_VDC_MEM(hh,ll,oep);
+        WRITE_VDC_MEM("wait11",hh,ll,oep);
 
         by+=80;
     }
@@ -250,9 +263,9 @@ void port_diag_line(unsigned short x1, unsigned short y1, unsigned short ix,
         hh=by>>8;
         ll=by&0x00FF;
     
-        READ_VDC_MEM(hh,ll,oep);
+        READ_VDC_MEM("wait1",hh,ll,oep);
         oep |= 0x80>>((unsigned char)x1&7);
-        WRITE_VDC_MEM(hh,ll,oep);
+        WRITE_VDC_MEM("wait10",hh,ll,oep);
         if(incx>0)
             ++x1;
         else
@@ -296,9 +309,9 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
             hh=by>>8;
             ll=by&0x00FF;
         
-            READ_VDC_MEM(hh,ll,oep);
+            READ_VDC_MEM("wait1",hh,ll,oep);
             oep |= 0x80>>((unsigned char)x&7);
-            WRITE_VDC_MEM(hh,ll,oep);
+            WRITE_VDC_MEM("wait10",hh,ll,oep);
         }
         return;
     }
@@ -311,9 +324,9 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
         hh=by>>8;
         ll=by&0x00FF;
     
-        READ_VDC_MEM(hh,ll,oep);
+        READ_VDC_MEM("wait2",hh,ll,oep);
         oep |= 0x80>>((unsigned char)x&7);
-        WRITE_VDC_MEM(hh,ll,oep);
+        WRITE_VDC_MEM("wait12",hh,ll,oep);
     }
 
     ttl=(x2a-x1a)>>3;
@@ -338,9 +351,9 @@ void port_hor_line(unsigned short x1, unsigned short x2, unsigned short y1)
         hh=by>>8;
         ll=by&0x00FF;
     
-        READ_VDC_MEM(hh,ll,oep);
+        READ_VDC_MEM("wait3",hh,ll,oep);
         oep |= 0x80>>((unsigned char)x&7);
-        WRITE_VDC_MEM(hh,ll,oep);
+        WRITE_VDC_MEM("wait13",hh,ll,oep);
     }
     
 }
@@ -382,9 +395,9 @@ void port_printat(unsigned short x, unsigned short y, char *s)
                     hh=by>>8;
                     ll=by&0x00FF;
                 
-                    READ_VDC_MEM(hh,ll,oep);
+                    READ_VDC_MEM("wait1",hh,ll,oep);
                     oep |= 0x80>>((unsigned char)x1&7);
-                    WRITE_VDC_MEM(hh,ll,oep);
+                    WRITE_VDC_MEM("wait10",hh,ll,oep);
                 }
                 if(t==f.magnification){
                     a>>=1;
@@ -476,9 +489,9 @@ void port_line(unsigned short x1, unsigned short y1,
     hh=by>>8;
     ll=by&0x00FF;
     
-    READ_VDC_MEM(hh,ll,oep);
+    READ_VDC_MEM("wait1",hh,ll,oep);
     oep |= mm;
-    WRITE_VDC_MEM(hh,ll,oep);
+    WRITE_VDC_MEM("wait10",hh,ll,oep);
 
     for(i=0; i<=inc; ++i) {
         x += ix;
@@ -505,9 +518,10 @@ void port_line(unsigned short x1, unsigned short y1,
             hh=by>>8;
             ll=by&0x00FF;
             
-            READ_VDC_MEM(hh,ll,oep);
+            READ_VDC_MEM("wait2",hh,ll,oep);
             oep |= mm;
-            WRITE_VDC_MEM(hh,ll,oep);
+            WRITE_VDC_MEM("wait12",hh,ll,oep);
+            //port_pset(x1,y1);
         }
         style_mask >>= 1;
         if(style_mask==0) style_mask=style;
