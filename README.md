@@ -5,11 +5,15 @@
 
 This project (distributed with the GPLv.3 license) is a very simple 3D maze originally written for
 the Commodore 64 computer, hence the name, and then ported to UNIX. The source code is written in C (with some inline
-assembly for the C64 version) and it is meant to be compiled with the cc65 compiler or gcc with the SDL2 library.
+assembly for the C64 and C128 version) and it is meant to be compiled with the cc65 compiler or gcc with the SDL2 library.
 
 The game started as an exercise in high resolution graphics on the C64 and was inspired to those old 3D maze games in BASIC that were popular at the time. However, the C language is much faster than BASIC and one can do some pretty nice things. Some routines are tweaked in assembly for better performances.
 
+It has then been ported in 2026 to the C128 to exploit the high-resolution bitmap display offered by the VDC, the 80-column display chip.
+
 ![Do you dare to enter The Maze?](https://github.com/DarwinNE/C64maze/raw/master/screenshots/step_in.png)
+
+![The C128 maze](https://github.com/DarwinNE/C64maze/raw/master/screenshots/c128_maze.jpg)
 
 The goal of the game is to find the exit of the maze in the shortest possible amount of time. The entrance of the maze is changed randomly each time the game is played. You can have a look at the maze map, but beware! Each time this is done, a penalty of 30s is applied:
 
