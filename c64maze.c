@@ -430,6 +430,8 @@ void draw_banner(void)
     port_printat(207,120,"[a] restart  ");
     
     port_printat(207,170,"d. bucci 2017");
+    port_printat(207,180,"         2026");
+
     port_printat(207,160,"igor1101 2019");
     port_loadVICFont(2);
     port_line(200,0,200,199);

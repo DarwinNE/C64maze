@@ -40,6 +40,11 @@ To build the game for UNIX\GNU linux install SDL2 library and type:
 make PLATFORM=UNIX
 ~~~~
 
+To build for the Commodore 128, make sure you have CC65 installed and type:
+~~~~
+make PLATFORM=C128
+~~~~
+
 To build for the Commodore 64, make sure you have CC65 installed and type:
 ~~~~
 make PLATFORM=C64
